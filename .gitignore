@@ -1,0 +1,7 @@
+.venv
+venv
+__pychche__
+audios
+text_archive.txt
+**/__pycache__/
+.env
