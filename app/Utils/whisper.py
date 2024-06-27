@@ -129,7 +129,7 @@ async def stt_archive(db, purchased_scanner_id, archive_list):
     
     # for audio in audios:
     #     context += audio.context + '\n'
-    # print(context)
+    print(context)
     if context =="":
         return
     response = await extract_info_from_context(context)
