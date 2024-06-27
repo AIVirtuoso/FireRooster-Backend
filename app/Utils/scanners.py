@@ -131,3 +131,23 @@ async def update_scanners(db, coid = 1):
         state_dict['scanners'] = state_scanners
         result.append(state_dict)
     return result
+
+
+def validate_tier_limit(usertype, scanner_list):
+    state_set = set()
+    county_set = set()
+    scanner_set = set()
+    
+    for scanner in scanner_list:
+        state_set.add(scanner["state_id"])
+        county_set.add(scanner["county_id"])
+        scanner_set.add(scanner["scanner_id"])
+    
+    if len(state_set) > usertype.state_limit:
+        return False
+    if len(county_set) > usertype.county_limit:
+        return False
+    if len(scanner_set) > usertype.scanner_limit:
+        return False
+    
+    return True

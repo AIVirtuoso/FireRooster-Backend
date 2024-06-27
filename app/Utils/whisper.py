@@ -34,47 +34,71 @@ async def ai_translate(audio_file_path):
     return transcription.text
 
 async def extract_info_from_context(context):
+    
+    functions = [
+        {
+            "name": 'extract_info',
+            "description": "Get the list of notifications/reports about the events mentioned in the given context",
+            'parameters': {
+                'type': "object",
+                "properties":{
+                    "event":{
+                        'type': 'array',
+                        'items': {
+                            'type': 'object',
+                            'properties': {
+                                'Headline': {
+                                    'type': 'string',
+                                    'description': "A specified headline focusing on the main event."
+                                },
+                                "Description": {
+                                    'type': 'string',
+                                    'description': "Over 5 sentences (over 200 words) of professional and informative description of the event, based on the provided context. This description should be provided in detail with over 5 sentences only based on the context."
+                                },
+                                "Incident_Address": {
+                                    'type': 'string',
+                                    'description': "Extract and clearly state only the street address of the event."
+                                },
+                            }
+                        },
+                        "required": ["Headline", "Description", "Incident_Address"]
+                    }
+                }
+            },
+            "required": ["event"]
+        }
+    ]
+    
     try:
-        instruction = f"""I need a general notification/report about the event mentioned in the given context, presented in JSON format.
-        
-        For report, please include:
-        - A specified headline focusing on the main event.
-        - A professional and informative description of the event, based on the provided context.
-        - Extract and clearly state only the street address of the event.
-        
-        Ensure that the report should be provided as a JSON format.
-        --------------------
-        Below is the given content you have to analyze.
-        {context}
-        """
+        instruction = f"""I need a general notification/report about the event mentioned in the given context, presented in JSON format."""
         
         response = client.chat.completions.create(
-            model='gpt-4-1106-preview',
-            max_tokens=2000,
+            model='gpt-4o',
+            max_tokens=4000,
             messages=[
                 {'role': 'system', 'content': instruction},
-                {'role': 'user', 'content': """
-                    Below is the sample output.
-                    {
-                        "Headline": "Laird Theater Fire Alarm Response",
-                        "Description": "On [Date of the Incident], an emergency response was initiated for a fire alarm at the Laird Theater, located at 129-52 Western Avenue. Initially, there was some confusion regarding the exact location of the incident, with an alarm company incorrectly reporting it as Beggars. Upon clarification, the fire department confirmed the correct location as the Laird Theater.
-                        Engine 28-13 was dispatched for auto aid, and multiple fire departments were coordinated through county channels. Upon arrival and investigation, the responding units identified the issue as a faulty fire detector and subsequently reset the alarm. All units were cleared to return to their respective stations.
-                        No active fire or emergency was found, and the incident was safely resolved. Additionally, the report notes that Engine 21-13 was made aware of a rear marker light issue on their vehicle.
-                        ",
-                        "Incident Address": "Laird Theater, 129-52 Western Avenue",
-                    }
+                {'role': 'user', 'content': f"""
+                    This is the input context you have to analyze.
+                    {context}
                 """}
             ],
             seed=2425,
             temperature = 0.7,
-            response_format={"type": "json_object"}
+            functions=functions,
+            function_call={"name": "extract_info"}
         )
-        response_message = response.choices[0].message.content
-        
-        print("response: ", response_message)
-        
-        json_response = json.loads(response_message)
-        print(json_response)
+        response_message = response.choices[0].message
+        system_fingerprint = response.system_fingerprint
+        print(system_fingerprint)
+
+        if hasattr(response_message, "function_call"):
+            json_response = json.loads(
+                response_message.function_call.arguments)
+            print("json_response: ", json_response)
+            return json_response
+        else:
+            print("function_call_error!\n")
+            return {}
     except Exception as e:
         print(e)
         print("--------------")
@@ -82,22 +106,36 @@ async def extract_info_from_context(context):
         
 async def stt_archive(db, purchased_scanner_id, archive_list):
     context = ""
-    # for archive in archive_list:
-    #     print("archive: ", archive)
-    #     transcript = ""
-    #     try:
-    #         transcript += await ai_translate(archive['filename'])
-    #         print("whisper - context: ", transcript)
+    for archive in archive_list:
+        print("archive: ", archive)
+        
+        data = await crud.get_audio_by_filename(db, archive['filename'])
+        if data:
+           continue 
+        
+        transcript = ""
+        try:
+            transcript += await ai_translate(archive['filename'])
+            print("whisper - context: ", transcript)
             
-    #         context += transcript
+            context += transcript
             
-    #         await crud.insert_audio(db, archive['filename'], transcript, purchased_scanner_id)
-    #     except Exception as e:
-    #         log.error(f"Failed to translate file {archive['filename']}")
+            await crud.insert_audio(db, archive['filename'], transcript, purchased_scanner_id)
+        except Exception as e:
+            log.error(f"Failed to translate file {archive['filename']}")
 
-    audios = await crud.get_audios_by_scanner_id(db, purchased_scanner_id)
+    # audios = await crud.get_audios_by_scanner_id(db, purchased_scanner_id)
     
-    for audio in audios:
-        context += audio.context + '\n'
-    print(context)
+    # for audio in audios:
+    #     context += audio.context + '\n'
+    # print(context)
+    if context =="":
+        return
     response = await extract_info_from_context(context)
+    
+    for event in response['event']:
+        try:
+            await crud.insert_alert(db, purchased_scanner_id, event)
+        except Exception as e:
+            print(e)
+    

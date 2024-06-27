@@ -2,10 +2,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload, Session, aliased
 from sqlalchemy import func, delete
+from sqlalchemy import and_
 
 from datetime import datetime
 
-from schema import User, Audio, Scanner, UserType, PurchasedScanner
+from schema import User, Audio, Scanner, UserType, PurchasedScanner, Alert
 from database import AsyncSessionLocal
 from app.Models.ScannerModel import FilterModel as ScannerFilterModel
 from app.Models.AlertModel import FilterModel as AlertFilterModel
@@ -29,6 +30,11 @@ async def create_user(db: AsyncSession, **kwargs):
     await db.refresh(new_user)
     return new_user
 
+async def get_audio_by_filename(db: AsyncSession, filename):
+    stmt = select(Audio).filter(Audio.file_name == filename)
+    result = await db.execute(stmt)
+    return result.scalar_one_or_none()
+
 async def insert_audio(db: AsyncSession, audio, context, scanner_id):
     stmt = select(Audio).filter(Audio.file_name == audio)
     result = await db.execute(stmt)
@@ -42,6 +48,22 @@ async def insert_audio(db: AsyncSession, audio, context, scanner_id):
         return new_audio
         
     return new_user
+
+async def insert_alert(db: AsyncSession, purchased_scanner_id, event):
+    new_alert = Alert(headline=event['Headline'], description=event['Description'], address=event['Incident_Address'], scanner_id=purchased_scanner_id)
+    db.add(new_alert)
+    await db.commit()
+    await db.refresh(new_alert)
+    return new_alert
+
+async def get_total_alerts(db: AsyncSession) -> int:
+    # Create a select statement to count the total number of rows
+    stmt = select(func.count(Alert.id))
+    result = await db.execute(stmt)
+    total_alerts = result.scalar_one()
+    
+    return total_alerts
+        
 
 async def get_audios_by_scanner_id(db: AsyncSession, purchased_scanner_id):
     stmt = select(Audio).filter(Audio.scanner_id == purchased_scanner_id)
@@ -74,10 +96,10 @@ async def get_scanners_by_filter(db: AsyncSession, filter_model: ScannerFilterMo
     query = select(Scanner)
     # Dynamically apply filters
     if filter_model.state_id:
-        query = query.filter(Scanner.state_id == filter_model.state_id)
+        query = query.where(Scanner.state_id.in_(filter_model.state_id))
     
     if filter_model.county_id:
-        query = query.filter(Scanner.county_id == filter_model.county_id)
+        query = query.where(Scanner.county_id.in_(filter_model.county_id))
     
     start = (filter_model.page - 1) * filter_model.limit
     
@@ -87,8 +109,8 @@ async def get_scanners_by_filter(db: AsyncSession, filter_model: ScannerFilterMo
     scanners = result.scalars().all()
     return scanners
 
-async def get_scanner_by_id(db: AsyncSession, scanner_id):
-    stmt = select(Scanner).filter(Scanner.id == scanner_id)
+async def get_scanner_by_scanner_id(db: AsyncSession, scanner_id):
+    stmt = select(Scanner).filter(Scanner.scanner_id == scanner_id)
     result = await db.execute(stmt)
     # print("scanner result: ",result)
     return result.scalar_one_or_none()
@@ -110,13 +132,20 @@ async def get_state_and_county_list(db: AsyncSession):
         
         # Fetch counties related to the current state
         county_stmt = (
-            select(Scanner.city_name.label('county_name'), Scanner.county_id.label('county_id'))
+            select(Scanner.county_name.label('county_name'), Scanner.county_id.label('county_id'))
             .where(Scanner.state_id == state_id)
         )
         county_results = await db.execute(county_stmt)
         counties = county_results.all()
 
-        county_list = [{'county_name': county.county_name, 'county_id': county.county_id} for county in counties]
+        seen_county_ids = set()
+        county_list = []
+
+        for county in counties:
+            county_id = county.county_id
+            if county_id not in seen_county_ids:
+                seen_county_ids.add(county_id)
+                county_list.append({'county_name': county.county_name, 'county_id': county_id})
         
         state_dict = {
             'state_name': state_name,
@@ -132,11 +161,8 @@ async def get_state_and_county_list(db: AsyncSession):
 async def get_alerts_by_filter(db: AsyncSession, filter_model: AlertFilterModel):
     query = select(Alert)
     # Dynamically apply filters
-    if filter_model.state_id:
-        query = query.filter(Scanner.state_id == filter_model.state_id)
-    
-    if filter_model.county_id:
-        query = query.filter(Scanner.county_id == filter_model.county_id)
+    if filter_model.scanner_id:
+        query = query.filter(Alert.scanner_id == filter_model.scanner_id)
     
     start = (filter_model.page - 1) * filter_model.limit
     

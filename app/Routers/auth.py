@@ -56,7 +56,7 @@ async def get_user(user: Annotated[User, Depends(get_current_user)], db: Session
     purchased_scanner_list = await crud.get_purchased_scanners_by_user(db, user.id)
     
     for purchased_scanner in purchased_scanner_list:
-        scanner = await crud.get_scanner_by_id(db, purchased_scanner.scanner_id)
+        scanner = await crud.get_scanner_by_scanner_id(db, purchased_scanner.scanner_id)
         purchased_scanners.append(scanner)
     
     return {"user": user, "usertype": usertype, "purchased_scanners": purchased_scanners}

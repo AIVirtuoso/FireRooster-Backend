@@ -51,3 +51,11 @@ class PurchasedScanner(Base):
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     user_id = Column(Integer, index=True)
     scanner_id = Column(Integer, index=True)
+    
+class Alert(Base):
+    __tablename__ = "alert_table"
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    headline = Column(String, index=True)
+    description = Column(String, index=True)
+    address = Column(String, index=True)
+    scanner_id = Column(Integer, index=True)
