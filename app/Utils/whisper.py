@@ -132,11 +132,19 @@ async def stt_archive(db, purchased_scanner_id, archive_list):
     print(context)
     if context =="":
         return
-    response = await extract_info_from_context(context)
     
-    for event in response['event']:
-        try:
-            await crud.insert_alert(db, purchased_scanner_id, event)
-        except Exception as e:
-            print(e)
+    unit = 70000
+    start = 0
+    
+    while start < len(context):
+        sub_context = context[start: start + unit + 200]
+        start = start + unit
+        
+        response = await extract_info_from_context(sub_context)
+        
+        for event in response['event']:
+            try:
+                await crud.insert_alert(db, purchased_scanner_id, event)
+            except Exception as e:
+                print(e)
     
