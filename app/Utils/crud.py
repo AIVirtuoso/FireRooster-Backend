@@ -3,12 +3,14 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import joinedload, Session, aliased
 from sqlalchemy import func, delete
 from sqlalchemy import and_
+from sqlalchemy import or_
 
 from datetime import datetime
 
 from schema import User, Audio, Scanner, UserType, PurchasedScanner, Alert
 from database import AsyncSessionLocal
 from app.Models.ScannerModel import FilterModel as ScannerFilterModel
+from app.Models.AlertModel import IdFilterModel
 from app.Models.AlertModel import FilterModel as AlertFilterModel
 
 
@@ -107,6 +109,9 @@ async def get_scanners_by_scanner_id_list(db: AsyncSession, scanner_id_list):
 async def get_scanners_by_filter(db: AsyncSession, filter_model: ScannerFilterModel):
     query = select(Scanner)
     # Dynamically apply filters
+    if filter_model.search:
+        query = query.where(Scanner.scanner_title.ilike(f'%{filter_model.search}%'))
+    
     if filter_model.state_id:
         query = query.where(Scanner.state_id.in_(filter_model.state_id))
     
@@ -126,7 +131,6 @@ async def get_scanners_by_filter(db: AsyncSession, filter_model: ScannerFilterMo
 async def get_scanner_by_scanner_id(db: AsyncSession, scanner_id):
     stmt = select(Scanner).filter(Scanner.scanner_id == scanner_id)
     result = await db.execute(stmt)
-    # print("scanner result: ",result)
     return result.scalar_one_or_none()
 
 async def get_state_and_county_list(db: AsyncSession):
@@ -175,16 +179,28 @@ async def get_state_and_county_list(db: AsyncSession):
 async def get_alerts_by_filter(db: AsyncSession, filter_model: AlertFilterModel):
     query = select(Alert)
     # Dynamically apply filters
+    print("filter_model.scanner_id: ", filter_model.scanner_id)
     if filter_model.scanner_id:
         query = query.filter(Alert.scanner_id == filter_model.scanner_id)
     
-    start = (filter_model.page - 1) * filter_model.limit
-    
-    query = query.offset(start).limit(filter_model.limit)
-
     result = await db.execute(query)
     scanners = result.scalars().all()
-    return scanners
+    
+    total = len(scanners)
+    start = (filter_model.page - 1) * filter_model.limit
+    
+    scanners = scanners[start: start + filter_model.limit]
+
+    return scanners, total
+
+async def get_alerts_by_id(db: AsyncSession, filter_model: IdFilterModel):
+    query = select(Alert)
+    print("filter_model.scanner_id: ", filter_model.scanner_id)
+    query = query.filter(Alert.scanner_id == filter_model.scanner_id)
+    query = query.filter(Alert.id == filter_model.alert_id)
+    
+    result = await db.execute(query)
+    return result.scalar_one_or_none()
 
 async def insert_purchased_scanners(db: AsyncSession, user_id, scanner_id):
     new_purchased_scanner = PurchasedScanner(user_id=user_id, scanner_id=scanner_id)

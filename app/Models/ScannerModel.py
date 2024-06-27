@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from typing import Optional, List, Dict
 
 class FilterModel(BaseModel):
+    search: Optional[str] = ""
     state_id: Optional[List[int]] = None
     county_id: Optional[List[int]] = None
     page: Optional[int] = 1
@@ -10,3 +11,4 @@ class FilterModel(BaseModel):
 
 class PurchaseScannerModel(BaseModel):
     scanner_id_list: List[int]
+    

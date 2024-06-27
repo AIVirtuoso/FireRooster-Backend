@@ -19,7 +19,7 @@ endpoint_secret = 'whsec_MrPR7F0F75yPfAi4wJyZ4EtdC4TFs4Cc'
 
 print(stripe.api_key)
 
-YOUR_DOMAIN = 'http://95.164.44.248:3001'
+YOUR_DOMAIN = 'http://localhost:3000'
 
 Platinum_Price_Id = "price_1PV6WHAZfjTlvHBoMdUxAcCJ"
 Gold_Price_Id = "price_1PV6VgAZfjTlvHBo6XIjxJUM"
@@ -42,8 +42,8 @@ def create_checkout_session(model: StripeModel):
                 },
             ],
             mode='subscription',
-            success_url=YOUR_DOMAIN + '/dashboard/billing',
-            cancel_url=YOUR_DOMAIN + '/dashboard/billing',
+            success_url=YOUR_DOMAIN + '/dashboard/billing?success=true',
+            cancel_url=YOUR_DOMAIN + '/dashboard/billingsuccess=false',
         )
     except Exception as e:
         return str(e)
@@ -115,8 +115,12 @@ async def handle_payment_succeeded(db, invoice):
     sub_id = invoice
     line_item = invoice['lines']['data'][0]
     plan_id = line_item['plan']['id']
+    email = invoice['customer_email']
+    print(invoice)
     
-    user = await crud.get_user_by_email(email)
+    user = await crud.get_user_by_email(db, email)
+    
+    print(user)
     
     if plan_id == Silver_Price_Id:
         await crud.update_usertype(db, user, 1)

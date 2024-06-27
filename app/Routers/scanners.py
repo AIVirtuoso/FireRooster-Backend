@@ -104,11 +104,11 @@ async def purchase_scanners_router(model: PurchaseScannerModel, user: Annotated[
     
     print(scanner_list)
     
-    if not usertype:
-        return {"status": "Please subscribe your package!"}
+    # if not usertype:
+    #     return {"status": "Please subscribe your package!"}
     
-    if not validate_tier_limit(usertype, scanner_list):
-        return {"status": "Exceed package limit!"}
+    # if not validate_tier_limit(usertype, scanner_list):
+    #     return {"status": "Exceed package limit!"}
     
     for scanner in scanner_list:
         scanner_id = scanner.scanner_id

@@ -8,7 +8,7 @@ from app.Utils.download_audios import download
 from app.Utils.remove_space import process_audio
 from app.Utils.whisper import stt_archive
 from app.Utils.scanners import update_scanners
-from app.Models.AlertModel import FilterModel
+from app.Models.AlertModel import FilterModel, IdFilterModel
 from app.Utils.auth import get_current_user
 from schema import User
 import app.Utils.crud as crud
@@ -35,6 +35,10 @@ async def update_alerts_router(user: Annotated[User, Depends(get_current_user)],
 
 @router.post('/get-alerts-by-filter')
 async def get_alerts_by_filter_router(model: FilterModel, user: Annotated[User, Depends(get_current_user)], db: Session = Depends(get_db)):
-    data = await crud.get_alerts_by_filter(db, model)
-    total = await crud.get_total_alerts(db)
+    data, total = await crud.get_alerts_by_filter(db, model)
     return {"data": data, "pagination": {"total": total}}
+
+@router.post('/get-alert-by-id')
+async def get_alerts_by_filter_router(model: IdFilterModel, user: Annotated[User, Depends(get_current_user)], db: Session = Depends(get_db)):
+    data = await crud.get_alerts_by_id(db, model)
+    return data

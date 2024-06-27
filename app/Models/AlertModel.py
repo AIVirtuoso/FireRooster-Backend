@@ -5,3 +5,9 @@ class FilterModel(BaseModel):
     scanner_id: Optional[int] = None
     page: Optional[int] = 1
     limit: Optional[int] = 10
+    
+    
+
+class IdFilterModel(BaseModel):
+    alert_id: Optional[int]
+    scanner_id: Optional[int]
