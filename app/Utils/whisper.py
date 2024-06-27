@@ -110,12 +110,13 @@ async def stt_archive(db, purchased_scanner_id, archive_list):
         print("archive: ", archive)
         
         data = await crud.get_audio_by_filename(db, archive['filename'])
-        if data:
-           continue 
+        if data and data.context:
+           context += data.context
+           continue
         
         transcript = ""
         try:
-            transcript += await ai_translate(archive['filename'])
+            transcript = await ai_translate(archive['filename'])
             print("whisper - context: ", transcript)
             
             context += transcript
