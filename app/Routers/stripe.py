@@ -52,6 +52,8 @@ def create_checkout_session(model: StripeModel):
     return checkout_session.url
 
 
+
+
 @router.post('/webhook')
 async def webhook(request: Request, db: Session = Depends(get_db)):
     payload = await request.body()
@@ -96,7 +98,7 @@ async def handle_subscription_created(db, subscription):
     start_date = subscription['start_date']
 
     # Update your database with subscription details
-    print("Subscription created:", subscription)
+    print("Subscription created:", subscription['id'])
 
     # Provision services, send notifications, etc.
     # ...
@@ -110,7 +112,7 @@ async def handle_subscription_deleted(db, subscription):
     print("Subscription deleted:", subscription)
 
 async def handle_payment_succeeded(db, invoice):
-    
+    sub_id = invoice
     line_item = invoice['lines']['data'][0]
     plan_id = line_item['plan']['id']
     

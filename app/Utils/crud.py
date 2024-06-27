@@ -98,6 +98,12 @@ async def get_total_scanners(db: AsyncSession) -> int:
     
     return total_scanners
 
+async def get_scanners_by_scanner_id_list(db: AsyncSession, scanner_id_list):
+    query = select(Scanner).where(Scanner.scanner_id.in_(scanner_id_list))
+    result = await db.execute(query)
+    scanners = result.scalars().all()
+    return scanners
+
 async def get_scanners_by_filter(db: AsyncSession, filter_model: ScannerFilterModel):
     query = select(Scanner)
     # Dynamically apply filters
@@ -107,13 +113,15 @@ async def get_scanners_by_filter(db: AsyncSession, filter_model: ScannerFilterMo
     if filter_model.county_id:
         query = query.where(Scanner.county_id.in_(filter_model.county_id))
     
-    start = (filter_model.page - 1) * filter_model.limit
-    
-    query = query.offset(start).limit(filter_model.limit)
-
     result = await db.execute(query)
     scanners = result.scalars().all()
-    return scanners
+    
+    total = len(scanners)
+    
+    start = (filter_model.page - 1) * filter_model.limit
+    scanners = scanners[start: start + filter_model.limit]
+
+    return scanners, total
 
 async def get_scanner_by_scanner_id(db: AsyncSession, scanner_id):
     stmt = select(Scanner).filter(Scanner.scanner_id == scanner_id)

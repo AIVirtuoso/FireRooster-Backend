@@ -139,9 +139,9 @@ def validate_tier_limit(usertype, scanner_list):
     scanner_set = set()
     
     for scanner in scanner_list:
-        state_set.add(scanner["state_id"])
-        county_set.add(scanner["county_id"])
-        scanner_set.add(scanner["scanner_id"])
+        state_set.add(scanner.state_id)
+        county_set.add(scanner.county_id)
+        scanner_set.add(scanner.scanner_id)
     
     if len(state_set) > usertype.state_limit:
         return False

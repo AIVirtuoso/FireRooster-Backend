@@ -9,4 +9,4 @@ class FilterModel(BaseModel):
     
 
 class PurchaseScannerModel(BaseModel):
-    scanner_list: List[dict]
+    scanner_id_list: List[int]
