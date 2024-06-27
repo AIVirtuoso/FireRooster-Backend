@@ -6,7 +6,7 @@ import stripe
 
 from app.Models.StripeModel import StripeModel
 from database import AsyncSessionLocal
-
+import app.Utils.crud as crud
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -66,30 +66,30 @@ async def webhook(request: Request, db: Session = Depends(get_db)):
 
     if event['type'] == 'customer.subscription.created':
         subscription = event['data']['object']
-        handle_subscription_created(db, subscription)
+        await handle_subscription_created(db, subscription)
 
     elif event['type'] == 'customer.subscription.updated':
         subscription = event['data']['object']
-        handle_subscription_updated(db, subscription)
+        await handle_subscription_updated(db, subscription)
 
     elif event['type'] == 'customer.subscription.deleted':
         subscription = event['data']['object']
-        handle_subscription_deleted(db, subscription)
+        await handle_subscription_deleted(db, subscription)
 
     elif event['type'] == 'invoice.payment_succeeded':
         invoice = event['data']['object']
-        handle_payment_succeeded(db, invoice)
+        await handle_payment_succeeded(db, invoice)
 
     elif event['type'] == 'invoice.payment_failed':
         invoice = event['data']['object']
-        handle_payment_failed(db, invoice)
+        await handle_payment_failed(db, invoice)
 
     else:
         print('Unhandled event type {}'.format(event['type']))
 
     return JSONResponse(status_code=200, content={"success": True})
 
-def handle_subscription_created(db, subscription):
+async def handle_subscription_created(db, subscription):
     # Example logic for handling subscription created
     customer_id = subscription['customer']
     plan_id = subscription['items']['data'][0]['plan']['id']
@@ -101,11 +101,11 @@ def handle_subscription_created(db, subscription):
     # Provision services, send notifications, etc.
     # ...
 
-def handle_subscription_updated(db, subscription):
+async def handle_subscription_updated(db, subscription):
     # Example logic for handling subscription updated
     print("Subscription updated:", subscription)
 
-def handle_subscription_deleted(db, subscription):
+async def handle_subscription_deleted(db, subscription):
     await crud.update_usertype(db, user, 0)
     print("Subscription deleted:", subscription)
 
@@ -126,6 +126,6 @@ async def handle_payment_succeeded(db, invoice):
     
     print("Payment succeeded:", invoice)
 
-def handle_payment_failed(db, invoice):
+async def handle_payment_failed(db, invoice):
     # Example logic for handling payment failed
     print("Payment failed:", invoice)

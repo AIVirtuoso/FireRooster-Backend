@@ -23,6 +23,12 @@ async def get_user_type_by_id(db: AsyncSession, id: int):
     result = await db.execute(stmt)
     return result.scalar_one_or_none()
 
+async def update_usertype(db: AsyncSession, user, type):
+    user.user_type_id = type
+    await db.commit()
+    await db.refresh(user)
+    return user
+
 async def create_user(db: AsyncSession, **kwargs):
     new_user = User(**kwargs)
     db.add(new_user)
