@@ -57,7 +57,7 @@ async def extract_info_from_context(context):
                                 },
                                 "Incident_Address": {
                                     'type': 'string',
-                                    'description': "Extract and clearly state only the street address of the event."
+                                    'description': "Extract and clearly state the formatted street address of the event from the provided text. Make sure the address is as standardized and structured as possible, ideally including street number, street name, city, state, and ZIP code."
                                 },
                             }
                         },
@@ -148,3 +148,4 @@ async def stt_archive(db, purchased_scanner_id, archive_list):
             except Exception as e:
                 print(e)
     
+    print('-------------------------------------------------------------------')
