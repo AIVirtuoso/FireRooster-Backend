@@ -111,8 +111,9 @@ async def stt_archive(db, purchased_scanner_id, archive_list):
         
         data = await crud.get_audio_by_filename(db, archive['filename'])
         if data and data.context:
-           context += data.context
-           continue
+            print(data.context)
+            context += data.context
+            continue
         
         transcript = ""
         try:
