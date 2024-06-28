@@ -10,14 +10,13 @@ from schema import Base
 # Load environment variables
 load_dotenv()
 
-host = os.getenv("PostSQL_HOST")
-user = os.getenv("PostSQL_USER")
-password = os.getenv("PostSQL_PASSWORD")
-database = os.getenv("PostSQL_DATABASE")
-port = os.getenv("PostSQL_PORT")
+host = os.getenv("MYSQL_HOST")
+user = os.getenv("MYSQL_USER")
+password = os.getenv("MYSQL_PASSWORD")
+database = os.getenv("MYSQL_DATABASE")
 
 # Update the DATABASE_URI for PostgreSQL
-DATABASE_URI = f"postgresql+asyncpg://{user}:{password}@{host}:{port}/{database}"
+DATABASE_URI = f"mysql+aiomysql://{user}:{password}@{host}/{database}"
 
 # Create asynchronous engine and session
 engine = create_async_engine(DATABASE_URI, echo=True, pool_size=30)

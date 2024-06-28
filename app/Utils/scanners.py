@@ -21,7 +21,7 @@ def extract_ids_from_response(response):
             archive_info.append({
                 'scanner_id': feed_id,
                 'scanner_title': feed_title,
-                'listeners_count': listeners_count
+                'listeners_count': int(listeners_count)
             })
     
     return archive_info
