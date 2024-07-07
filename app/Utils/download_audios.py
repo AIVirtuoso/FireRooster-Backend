@@ -106,7 +106,7 @@ def download_single_archive(archive, session):
         return None
 
 
-async def download_archives_sync(session, archive_list, num_workers=5):
+async def download_archives_sync(session, archive_list, num_workers=10):
     loop = asyncio.get_event_loop()
     result = []
     with ThreadPoolExecutor(max_workers=num_workers) as executor:
