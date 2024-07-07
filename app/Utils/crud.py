@@ -216,6 +216,12 @@ async def delete_purchased_scanners_by_user_id(db: AsyncSession, user_id: int):
     await db.execute(stmt)
     await db.commit()
     
+async def delete_purchased_scanners_by_scanner_id(db: AsyncSession, scanner_id: int, user_id: int):
+    # Define the delete statement
+    stmt = delete(PurchasedScanner).where(PurchasedScanner.scanner_id == scanner_id).where(PurchasedScanner.user_id == user_id)
+    await db.execute(stmt)
+    await db.commit()
+    
 async def get_purchased_scanners_by_user(db: AsyncSession, user_id):
     stmt = select(PurchasedScanner).filter(PurchasedScanner.user_id == user_id)
     result = await db.execute(stmt)

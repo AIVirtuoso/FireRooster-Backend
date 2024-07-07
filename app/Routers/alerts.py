@@ -21,7 +21,7 @@ async def get_db():
         
 
 @router.get('/update-alerts')
-async def update_alerts_router(user: Annotated[User, Depends(get_current_user)], db: Session = Depends(get_db)):
+async def update_alerts_router(db: Session = Depends(get_db)):
     purchased_scanner_list = await crud.get_all_purchased_scanners(db)
     print("purchased_scanner_list: ", purchased_scanner_list)
     purchased_scanner_id_list = list({purchased_scanner.scanner_id for purchased_scanner in purchased_scanner_list}) # remove duplicate

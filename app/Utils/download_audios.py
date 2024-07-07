@@ -1,15 +1,16 @@
-# ruff: noqa
 import datetime
 import io
 import os
 from pprint import pprint
 from random import sample
 import logging as log
+import asyncio
 
 import librosa
 import requests
 from pydub import AudioSegment
 from app.Utils.remove_space import process_audio
+from concurrent.futures import ThreadPoolExecutor
 
 TEMP_FOLDER = "audios"
 
@@ -38,7 +39,7 @@ def extract_ids_from_archive(archive):
 async def get_full_day_archives(session, feedId, date=None):
     # default to yesterday
     if date is None:
-        date = datetime.now().date() - datetime.timedelta(days=1)
+        date = datetime.datetime.now().date() - datetime.timedelta(days=1)
     feed_archive_url = "https://www.broadcastify.com/archives/ajax.php"
     url_date = format_datetime_for_url(date)
     formatted_url = (
@@ -87,25 +88,35 @@ def delete_temp_mp3(filename):
     os.remove(mp3_filename)
 
 
-async def download_archive(session, ar_list):
+def download_single_archive(archive, session):
+
     base_url = "https://www.broadcastify.com"
+    try:
+        archive_id = archive['id']
+        response = session.get(
+            f"{base_url}/archives/downloadv2/{archive_id}"
+        )  # download the mp3 file
+        filename = asyncio.run(save_and_convert_to_wav(
+            io.BytesIO(response.content), archive_id
+        ))  # save and convert to wav, run the coroutine
+        archive['filename'] = filename
+        return archive
+    except Exception as e:
+        print(e)
+        return None
+
+
+async def download_archives_sync(session, archive_list, num_workers=5):
+    loop = asyncio.get_event_loop()
     result = []
-    # ar_list = ar_list[:4]
-    for archive in ar_list:
-        try:
-            archive_id = archive['id']
-            response = session.get(
-                f"{base_url}/archives/downloadv2/{archive_id}"
-            )  # download the mp3 file
-            filename = await save_and_convert_to_wav(
-                io.BytesIO(response.content), archive_id
-            )  # save and convert to wav
-            archive['filename'] = filename
-            result.append(archive)
-        except Exception as e:
-            print(e)
-            
+    with ThreadPoolExecutor(max_workers=num_workers) as executor:
+        tasks = [loop.run_in_executor(executor, download_single_archive, archive, session) 
+                 for archive in archive_list]
+        for result_task in await asyncio.gather(*tasks):
+            if result_task:
+                result.append(result_task)
     return result
+
 
 async def parse_date_archive(feedId, date=datetime.datetime.now()):
     username = "alertai"
@@ -113,8 +124,6 @@ async def parse_date_archive(feedId, date=datetime.datetime.now()):
     action = "auth"
     redirect = "https://www.broadcastify.com/"
     
-    print(password)
-
     s = requests.Session()
 
     base_url = "https://www.broadcastify.com"
@@ -138,7 +147,6 @@ async def parse_date_archive(feedId, date=datetime.datetime.now()):
         return
     print("Login successful")
 
-
     archive_list = await get_full_day_archives(
         s,
         feedId=feedId,
@@ -149,7 +157,7 @@ async def parse_date_archive(feedId, date=datetime.datetime.now()):
 
     # download full day archive
     
-    archive_list = await download_archive(s, archive_list)
+    archive_list = await download_archives_sync(s, archive_list)
     
     return archive_list
 
@@ -157,5 +165,9 @@ async def download(feedId):
     # parse last 10 days of data
     result = []
     for i in range(1, 2):
+        print("feedId: ", feedId);
         result.extend(await parse_date_archive(feedId, datetime.datetime.now() - datetime.timedelta(days=i)))
     return result
+
+# Example usage:
+# asyncio.run(download(your_feed_id))

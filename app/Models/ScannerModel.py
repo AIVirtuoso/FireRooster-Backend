@@ -12,3 +12,6 @@ class FilterModel(BaseModel):
 class PurchaseScannerModel(BaseModel):
     scanner_id_list: List[int]
     
+class DeleteScannerModel(BaseModel):
+    scanner_id: int
+
