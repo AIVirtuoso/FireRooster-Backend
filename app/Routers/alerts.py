@@ -32,8 +32,9 @@ async def update_alerts_router(db: Session = Depends(get_db)):
 @router.post('/get-alerts-by-filter')
 async def get_alerts_by_filter_router(model: FilterModel, user: Annotated[User, Depends(get_current_user)], db: Session = Depends(get_db)):#user: Annotated[User, Depends(get_current_user)], 
     purchased_scanner_list = await crud.get_purchased_scanners_by_user(db, user.id)
+    purchased_scanner_id_list = list({purchased_scanner.scanner_id for purchased_scanner in purchased_scanner_list}) # remove duplicate
 
-    alerts, total = await crud.get_alerts_by_filter(db, model, purchased_scanner_list)
+    alerts, total = await crud.get_alerts_by_filter(db, model, purchased_scanner_id_list)
     result = []
     for alert in alerts:
         addresses = await crud.get_addresses_by_alert_id(db, alert.id)
