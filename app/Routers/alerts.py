@@ -27,8 +27,6 @@ async def update_alerts_router(db: Session = Depends(get_db)):
     purchased_scanner_id_list = list({purchased_scanner.scanner_id for purchased_scanner in purchased_scanner_list}) # remove duplicate
     
     for purchased_scanner_id in purchased_scanner_id_list:
-        if purchased_scanner_id != 32270:
-            continue
         await stt_archive(db, purchased_scanner_id)
 
 @router.post('/get-alerts-by-filter')
