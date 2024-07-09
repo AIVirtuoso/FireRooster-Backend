@@ -46,7 +46,8 @@ def validate_address(addresses):
     #     "1802 West Ninth Street, Dixon, IL 61021",
     #     "1802 W Ninth St, Dixon, IL 61021",
     # ]
-    for address in addresses:
+    for data in addresses['addresses']:
+        address = data['address']
         user_components = parse_address_components(address)
         geocode_data = get_geocode_data(address)
         if geocode_data and geocode_data['status'] == 'OK':
