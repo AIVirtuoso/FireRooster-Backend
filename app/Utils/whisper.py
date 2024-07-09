@@ -189,9 +189,10 @@ async def stt_archive(db, purchased_scanner_id):
 async def add_addresses(db, alert):
     address = await crud.get_addresses_by_alert_id(db, alert.id)
     if address:
-       continue 
+        print("continued: ", alert.id)
+        continue 
     
-    print(alert.id)
+    print("passed: ", alert.id)
         
     # addresses = await get_potential_addresses(alert.address])
     # results = validate_address(addresses)
