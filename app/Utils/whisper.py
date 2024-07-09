@@ -36,7 +36,6 @@ async def ai_translate(audio_file_path):
     return transcription.text
 
 async def extract_info_from_context(context):
-    
     functions = [
         {
             "name": 'extract_info',
@@ -173,13 +172,14 @@ async def stt_archive(db, purchased_scanner_id):
         
         for event in response['event']:
             try:
-                addresses = await get_potential_addresses(event['Incident_Address'])
-                print("addresses: ", addresses)
-                results = validate_address(addresses)
-                sorted_results = sorted(results, key=lambda x: x["score"], reverse=True)
                 alert = await crud.insert_alert(db, purchased_scanner_id, event)
-                for result in sorted_results:
-                    await crud.insert_validated_address(db, result['address'], result['score'], alert.id)
+                if event['Incident_Address']:
+                    addresses = await get_potential_addresses(event['Incident_Address'])
+                    print("addresses: ", addresses)
+                    results = validate_address(addresses)
+                    sorted_results = sorted(results, key=lambda x: x["score"], reverse=True)
+                    for result in sorted_results:
+                        await crud.insert_validated_address(db, result['address'], result['score'], alert.id)
             except Exception as e:
                 print(e)
     
