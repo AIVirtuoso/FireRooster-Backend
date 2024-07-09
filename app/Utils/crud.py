@@ -43,6 +43,11 @@ async def get_audio_by_filename(db: AsyncSession, filename):
     result = await db.execute(stmt)
     return result.scalar_one_or_none()
 
+async def get_audio_by_scanner_id(db: AsyncSession, scanner_id):
+    stmt = select(Audio).filter(Audio.scanner_id == scanner_id)
+    result = await db.execute(stmt)
+    return result.scalar_one_or_none()
+
 async def insert_audio(db: AsyncSession, audio, context, scanner_id):
     stmt = select(Audio).filter(Audio.file_name == audio)
     result = await db.execute(stmt)

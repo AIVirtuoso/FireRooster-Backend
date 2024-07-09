@@ -6,6 +6,8 @@ from database import AsyncSessionLocal
 
 import app.Utils.crud as crud
 import json
+from app.Utils.validate_address import validate_address
+
 load_dotenv()
 
 client = OpenAI()
@@ -102,29 +104,55 @@ async def extract_info_from_context(context):
     except Exception as e:
         print(e)
         print("--------------")
+
+
+async def get_potential_addresses(address):
+    try:
+        prompt = """
+            I have an address input that is potentially incomplete or ambiguous.
+            I need your assistance to generate multiple complete address suggestions(more than 7) in json based on the provided data.
+            After generating these suggestions, I'll need to validate and rank them using an external service (like Google Address Validator). Please help me by performing the following steps for the given address:
+
+            Initial Address Suggestions
+            1. Analyze the provided address data.
+            2. Generate multiple potential complete addresses based on the possible interpretations and nearby variations.
+
+            Example Address Input:
+            "1802 West 9th Street, Dixon City, IL"
+
+            Sample output is below:
+            {
+                "addresses": [
+                    {"address": "1802 W 9th St, Dixon, IL 61021"},
+                    {"address": "1802 West Ninth Street, Dixon, IL 61021"}
+                ]
+            }
+        """
         
+        response = client.chat.completions.create(
+            model='gpt-4o',
+            max_tokens=4000,
+            messages=[
+                {'role': 'system', 'content': "Generate multiple complete address suggestions in json."},
+                {'role': 'user', 'content': prompt}
+            ],
+            seed=2425,
+            temperature = 0.7,
+            response_format={"type": "json_object"}
+        )
+        response_message = response.choices[0].message.content
+        json_response = json.loads(response_message)
+        return json_response
+    except Exception as e:
+        print(e)
+        print("--------------")
         
-async def stt_archive(db, purchased_scanner_id, archive_list):
+async def stt_archive(db, purchased_scanner_id):
     context = ""
-    for archive in archive_list:
-        print("archive: ", archive)
-        
-        data = await crud.get_audio_by_filename(db, archive['filename'])
-        if data and data.context:
-            print(data.context)
-            context += data.context
-            continue
-        
-        transcript = ""
-        try:
-            transcript = await ai_translate(archive['filename'])
-            print("whisper - context: ", transcript)
-            
-            context += transcript
-            
-            await crud.insert_audio(db, archive['filename'], transcript, purchased_scanner_id)
-        except Exception as e:
-            log.error(f"Failed to translate file {archive['filename']}")
+    audio_list = await crud.get_audio_by_scanner_id(db, purchased_scanner_id)
+    for audio in audio_list:        
+        print(audio.context)
+        context += audio.context
 
     # audios = await crud.get_audios_by_scanner_id(db, purchased_scanner_id)
     
@@ -145,7 +173,10 @@ async def stt_archive(db, purchased_scanner_id, archive_list):
         
         for event in response['event']:
             try:
-                await crud.insert_alert(db, purchased_scanner_id, event)
+                addresses = await get_potential_addresses(event['Incident_Address'])
+                print("addresses: ", addresses)
+                validate_address(addresses)
+                # await crud.insert_alert(db, purchased_scanner_id, event)
             except Exception as e:
                 print(e)
     
