@@ -108,7 +108,7 @@ async def extract_info_from_context(context):
 
 async def get_potential_addresses(address):
     try:
-        prompt = """
+        prompt = f"""
             I have an address input that is potentially incomplete or ambiguous.
             I need your assistance to generate multiple complete address suggestions(more than 7) in json based on the provided data.
             After generating these suggestions, I'll need to validate and rank them using an external service (like Google Address Validator). Please help me by performing the following steps for the given address:
@@ -117,9 +117,9 @@ async def get_potential_addresses(address):
             1. Analyze the provided address data.
             2. Generate multiple potential complete addresses based on the possible interpretations and nearby variations.
 
-            Example Address Input:
-            "1802 West 9th Street, Dixon City, IL"
-
+            Address Input you will base on:
+            {address}
+        """ + """
             Sample output is below:
             {
                 "addresses": [

@@ -13,7 +13,7 @@ def get_geocode_data(address):
     encoded_params = urlencode(params)
 
     response = requests.get(f"{url}?{encoded_params}")
-    print(f"{url}?{encoded_params}")
+    
     if response.status_code == 200:
         # print(response.json())
         return response.json()
@@ -38,14 +38,6 @@ def parse_address_components(address):
     return [component.strip().lower() for component in address.split(',')]
 
 def validate_address(addresses):
-    # addresses = [
-    #     "1802 West 9th Street, Dixon, IL 61021",
-    #     "1802 West 9th Street, Dixon City, IL 61021",
-    #     "1802 West 9th Street, Dixon, IL 61021, USA",
-    #     "1802 W 9th St, Dixon, IL 61021",
-    #     "1802 West Ninth Street, Dixon, IL 61021",
-    #     "1802 W Ninth St, Dixon, IL 61021",
-    # ]
     for data in addresses['addresses']:
         address = data['address']
         user_components = parse_address_components(address)
