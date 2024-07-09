@@ -6,7 +6,7 @@ from typing import List, Annotated
 
 from app.Utils.download_audios import download
 from app.Utils.remove_space import process_audio
-from app.Utils.whisper import stt_archive
+from app.Utils.whisper import stt_archive, add_addresses
 from app.Utils.scanners import update_scanners
 from app.Models.AlertModel import FilterModel, IdFilterModel
 from app.Utils.auth import get_current_user
