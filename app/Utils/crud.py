@@ -181,22 +181,24 @@ async def get_state_and_county_list(db: AsyncSession):
     return final_result
 
 
-async def get_alerts_by_filter(db: AsyncSession, filter_model: AlertFilterModel):
+async def get_alerts_by_filter(db: AsyncSession, filter_model: AlertFilterModel, purchased_scanner_list):
     query = select(Alert)
     # Dynamically apply filters
     print("filter_model.scanner_id: ", filter_model.scanner_id)
     if filter_model.scanner_id:
         query = query.filter(Alert.scanner_id == filter_model.scanner_id)
     
+    query = query.filter(Alert.scanner_id.in_(purchased_scanner_list))
+
     result = await db.execute(query)
-    scanners = result.scalars().all()
+    alerts = result.scalars().all()
     
-    total = len(scanners)
+    total = len(alerts)
     start = (filter_model.page - 1) * filter_model.limit
     
-    scanners = scanners[start: start + filter_model.limit]
+    alerts = alerts[start: start + filter_model.limit]
 
-    return scanners, total
+    return alerts, total
 
 async def get_alerts_by_id(db: AsyncSession, filter_model: IdFilterModel):
     query = select(Alert)
@@ -243,4 +245,10 @@ async def insert_validated_address(db: AsyncSession, address, score, alert_id):
     await db.commit()
     await db.refresh(new_address)
     return new_address
+                
+
+async def get_addresses_by_alert_id(db: AsyncSession, alert_id):
+    stmt = select(Address).filter(Address.alert_id == alert_id)
+    result = await db.execute(stmt)
+    return result.scalars().all()
                 

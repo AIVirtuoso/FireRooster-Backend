@@ -30,11 +30,15 @@ async def update_alerts_router(db: Session = Depends(get_db)):
         await stt_archive(db, purchased_scanner_id)
 
 @router.post('/get-alerts-by-filter')
-async def get_alerts_by_filter_router(model: FilterModel, db: Session = Depends(get_db)):#user: Annotated[User, Depends(get_current_user)], 
-    data, total = await crud.get_alerts_by_filter(db, model)
-    for item in data:
-        print(item.address)
-    return {"data": data, "pagination": {"total": total}}
+async def get_alerts_by_filter_router(model: FilterModel, user: Annotated[User, Depends(get_current_user)], db: Session = Depends(get_db)):#user: Annotated[User, Depends(get_current_user)], 
+    purchased_scanner_list = await crud.get_purchased_scanners_by_user(db, user.id)
+
+    alerts, total = await crud.get_alerts_by_filter(db, model, purchased_scanner_list)
+    result = []
+    for alert in alerts:
+        addresses = await crud.get_addresses_by_alert_id(db, alert.id)
+        result.append({"alert": alert, "addresses": addresses})
+    return {"alerts": results, "pagination": {"total": total}}
 
 @router.post('/get-alert-by-id')
 async def get_alerts_by_filter_router(model: IdFilterModel, user: Annotated[User, Depends(get_current_user)], db: Session = Depends(get_db)):
