@@ -38,7 +38,7 @@ async def get_alerts_by_filter_router(model: FilterModel, user: Annotated[User, 
     for alert in alerts:
         addresses = await crud.get_addresses_by_alert_id(db, alert.id)
         result.append({"alert": alert, "addresses": addresses})
-    return {"alerts": results, "pagination": {"total": total}}
+    return {"alerts": result, "pagination": {"total": total}}
 
 @router.post('/get-alert-by-id')
 async def get_alerts_by_filter_router(model: IdFilterModel, user: Annotated[User, Depends(get_current_user)], db: Session = Depends(get_db)):
