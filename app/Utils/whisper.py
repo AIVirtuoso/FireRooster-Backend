@@ -184,3 +184,17 @@ async def stt_archive(db, purchased_scanner_id):
                 print(e)
     
     print('-------------------------------------------------------------------')
+    
+       
+async def add_addresses(db, alert):
+    address = await crud.get_addresses_by_alert_id(db, alert.id)
+    if address:
+       continue 
+    
+    print(alert.id)
+        
+    # addresses = await get_potential_addresses(alert.address])
+    # results = validate_address(addresses)
+    # sorted_results = sorted(results, key=lambda x: x["score"], reverse=True)
+    # for result in sorted_results:
+    #     await crud.insert_validated_address(db, result['address'], result['score'], alert.id)
