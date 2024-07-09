@@ -190,7 +190,7 @@ async def add_addresses(db, alert):
     address = await crud.get_addresses_by_alert_id(db, alert.id)
     if address:
         print("continued: ", alert.id)
-        continue 
+        return 
     
     print("passed: ", alert.id)
         
