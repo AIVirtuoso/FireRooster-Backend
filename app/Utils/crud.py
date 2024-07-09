@@ -7,7 +7,7 @@ from sqlalchemy import or_
 
 from datetime import datetime
 
-from schema import User, Audio, Scanner, UserType, PurchasedScanner, Alert
+from schema import User, Audio, Scanner, UserType, PurchasedScanner, Alert, Address
 from database import AsyncSessionLocal
 from app.Models.ScannerModel import FilterModel as ScannerFilterModel
 from app.Models.AlertModel import IdFilterModel
@@ -236,3 +236,11 @@ async def get_all_purchased_scanners(db: AsyncSession):
     stmt = select(PurchasedScanner)
     result = await db.execute(stmt)
     return result.scalars().all()
+
+async def insert_validated_address(db: AsyncSession, address, score, alert_id):
+    new_address = Address(address=address, score=score, alert_id=alert_id)
+    db.add(new_address)
+    await db.commit()
+    await db.refresh(new_address)
+    return new_address
+                

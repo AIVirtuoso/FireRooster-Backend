@@ -38,6 +38,7 @@ def parse_address_components(address):
     return [component.strip().lower() for component in address.split(',')]
 
 def validate_address(addresses):
+    result = []
     for data in addresses['addresses']:
         address = data['address']
         user_components = parse_address_components(address)
@@ -46,8 +47,10 @@ def validate_address(addresses):
             google_components = parse_address_components(geocode_data['results'][0]['formatted_address'])
             score = score_address_components(user_components, google_components)
             print(f"User Address: {address}")
-            # print(f"Validated Address: {google_components}")
+            print(f"Validated Address: {google_components}")
             print(f"Accuracy Score: {score:.2f}\n")
+            result.append({"address": address, "score": score})
         else:
             print(f"Invalid or Not Found Address: {address}")
             print(f"Error: {geocode_data.get('status', 'Unknown Error') if geocode_data else 'No response from API'}\n")
+    return result

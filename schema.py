@@ -59,3 +59,10 @@ class Alert(Base):
     description = Column(String)
     address = Column(String)
     scanner_id = Column(Integer)
+    
+class Address(Base):
+    __tablename__ = "address_table"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    address = Column(String)
+    score = Column(Float)
+    alert_id = Column(Integer)
