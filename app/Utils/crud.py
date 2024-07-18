@@ -213,7 +213,7 @@ async def get_all_alerts(db: AsyncSession):
 async def get_alerts_by_id(db: AsyncSession, filter_model: IdFilterModel):
     query = select(Alert)
     print("filter_model.scanner_id: ", filter_model.scanner_id)
-    query = query.filter(Alert.scanner_id == filter_model.scanner_id)
+    # query = query.filter(Alert.scanner_id == filter_model.scanner_id)
     query = query.filter(Alert.id == filter_model.alert_id)
     
     result = await db.execute(query)
