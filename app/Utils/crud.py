@@ -193,6 +193,7 @@ async def get_alerts_by_filter(db: AsyncSession, filter_model: AlertFilterModel,
     result = await db.execute(query)
     alerts = result.scalars().all()
     
+    print('alerts: ', alerts);
     total = len(alerts)
     start = (filter_model.page - 1) * filter_model.limit
     
