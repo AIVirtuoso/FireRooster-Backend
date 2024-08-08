@@ -19,7 +19,7 @@ endpoint_secret = 'whsec_MrPR7F0F75yPfAi4wJyZ4EtdC4TFs4Cc'
 
 print(stripe.api_key)
 
-YOUR_DOMAIN = 'http://localhost:3000'
+YOUR_DOMAIN = 'http://localhost:3001'
 
 Platinum_Price_Id = "price_1PV6WHAZfjTlvHBoMdUxAcCJ"
 Gold_Price_Id = "price_1PV6VgAZfjTlvHBo6XIjxJUM"

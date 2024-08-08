@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, ForeignKey, Boolean, Float
+from sqlalchemy import Column, String, Integer, ForeignKey, Boolean, Float, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -34,6 +34,7 @@ class Audio(Base):
     file_name = Column(String)
     context = Column(String)
     scanner_id = Column(Integer)
+    dateTime = Column(DateTime)
 
 class Scanner(Base):
     __tablename__ = "scanner_table"
@@ -59,6 +60,7 @@ class Alert(Base):
     description = Column(String)
     address = Column(String)
     scanner_id = Column(Integer)
+    dateTime = Column(DateTime)
     
 class Address(Base):
     __tablename__ = "address_table"
@@ -66,3 +68,8 @@ class Address(Base):
     address = Column(String)
     score = Column(Float)
     alert_id = Column(Integer)
+    
+class Variables(Base):
+    __tablename__ = "variables_table"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    prompt = Column(String)

@@ -6,16 +6,17 @@ import schedule
 import time
 import asyncio
 from contextlib import asynccontextmanager
-
+import aiohttp  
 import requests
 import logging
 import logging.config
 from datetime import datetime, timedelta
 import logging
+from aiohttp import ClientTimeout  
 
 from database import AsyncSessionLocal, create_tables
 # from app.Routers import dashboard
-from app.Routers import auth, scanners, stripe, alerts
+from app.Routers import auth, scanners, stripe, alerts, profile
 
 
 
@@ -38,48 +39,41 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/api/auth")
 app.include_router(scanners.router, prefix="/api/scanners")
 app.include_router(alerts.router, prefix="/api/alerts")
-app.include_router(stripe.router, prefix="/api/stripe")
+app.include_router(stripe.router, prefix="/api/stripe") 
+app.include_router(profile.router, prefix="/api/profile") 
 
+
+async def send_request():
+    url = "http://173.0.155.75:7000/api/v1/update-alerts"  
+    logging.info(f"Attempting request to {url}")  
+    timeout = ClientTimeout(total=60)  # Adjust the timeout as needed  
+    try:  
+        async with aiohttp.ClientSession(timeout=timeout) as session:  
+            # No need to capture the response; just make the request  
+            async with session.get(url):  
+                logging.info("Request sent successfully")  
+    except aiohttp.ClientError as e:  
+        logging.error(f"Client error occurred: {e}")  # Logs the error but does not raise  
+    except asyncio.TimeoutError:  
+        logging.error("Timeout error: The request did not complete within the configured timeout")  # Logs timeout error but does not raise  
+    except Exception as e:  
+        logging.error(f"Unexpected error occurred: {e}") 
+
+async def periodic_task(interval: int):  
+    while True:  
+        await send_request()  
+        await asyncio.sleep(interval)  
+
+@app.on_event("startup")  
+async def startup_event():  
+    loop = asyncio.get_event_loop()  
+    # Schedule the periodic task to run every 1800 seconds (30 minutes)  
+    loop.create_task(periodic_task(3600)) 
 
 @app.get("/")
 async def health_checker():
     return {"status": "success"}
 
-# async def init():
-#     print("--------------dd--------------")
-#     async with AsyncSessionLocal() as db:
-#         variables = await crud.get_variables(db)
-#         if variables is None:
-#             crud.create_variables(db)
-            
-#         status = await crud.get_status(db)
-#         if status is None:
-#             crud.create_status(db)
-
-# async def main():
-#     await create_tables()
-#     await init()
-
-
-# def run_scheduler():
-#     # Calculate the time for the second job to start 1.5 hours after the first job
-#     first_job_time = datetime.now()
-#     second_job_start_time = (first_job_time + timedelta(hours=1.5)).strftime("%H:%M")
-
-#     # Schedule jobs to run every 3 hours
-#     schedule.every(3).hours.do(job, source="BuilderTrend")
-#     schedule.every(3).hours.at(second_job_start_time).do(job, source="Xactanalysis")
-
-#     # Run the scheduler in an infinite loop
-#     while True:
-#         schedule.run_pending()
-#         time.sleep(1)
 
 if __name__ == "__main__":
-    # asyncio.run(main())
-    
-    # import threading
-    # scheduler_thread = threading.Thread(target=run_scheduler)
-    # scheduler_thread.start()
-
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

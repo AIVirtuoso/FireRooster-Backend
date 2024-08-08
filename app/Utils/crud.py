@@ -7,7 +7,7 @@ from sqlalchemy import or_
 
 from datetime import datetime
 
-from schema import User, Audio, Scanner, UserType, PurchasedScanner, Alert, Address
+from schema import User, Audio, Scanner, UserType, PurchasedScanner, Alert, Address, Variables
 from database import AsyncSessionLocal
 from app.Models.ScannerModel import FilterModel as ScannerFilterModel
 from app.Models.AlertModel import IdFilterModel
@@ -214,7 +214,6 @@ async def get_all_alerts(db: AsyncSession):
 async def get_alerts_by_id(db: AsyncSession, filter_model: IdFilterModel):
     query = select(Alert)
     print("filter_model.scanner_id: ", filter_model.scanner_id)
-    # query = query.filter(Alert.scanner_id == filter_model.scanner_id)
     query = query.filter(Alert.id == filter_model.alert_id)
     
     result = await db.execute(query)
@@ -262,4 +261,26 @@ async def get_addresses_by_alert_id(db: AsyncSession, alert_id):
     stmt = select(Address).filter(Address.alert_id == alert_id)
     result = await db.execute(stmt)
     return result.scalars().all()
-                
+
+async def set_variables(db: AsyncSession, prompt):
+    query = select(Variables)
+    result = await db.execute(query)
+    result = result.scalars().all()
+    if not result:
+        new_variables = Variables(prompt=prompt)
+        db.add(new_variables)
+        print("new_variables", new_variables)
+        await db.commit()
+        await db.refresh(new_variables)
+    else:
+        updated_variables = result[0]
+        updated_variables.prompt = prompt
+        print("updated_variables", updated_variables)
+        await db.commit()
+        await db.refresh(updated_variables)
+        
+async def get_variables(db: AsyncSession):
+    query = select(Variables)
+    result = await db.execute(query)
+    return result.scalar_one_or_none()
+    

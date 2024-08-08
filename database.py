@@ -19,7 +19,7 @@ database = os.getenv("MYSQL_DATABASE")
 DATABASE_URI = f"mysql+aiomysql://{user}:{password}@{host}/{database}"
 
 # Create asynchronous engine and session
-engine = create_async_engine(DATABASE_URI, echo=True, pool_size=30)
+engine = create_async_engine(DATABASE_URI, echo=True, pool_size=30, max_overflow=10, pool_timeout=30, pool_recycle=3600)
 AsyncSessionLocal = sessionmaker(
     engine, expire_on_commit=False, class_=AsyncSession
 )
