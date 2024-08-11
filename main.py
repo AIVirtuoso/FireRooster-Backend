@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text  
 import uvicorn
 import schedule
 import time
@@ -44,7 +45,7 @@ app.include_router(profile.router, prefix="/api/profile")
 
 
 async def send_request():
-    url = "http://173.0.155.75:7000/api/v1/update-alerts"  
+    url = "http://108.61.203.106:7000/api/v1/update-alerts"  
     logging.info(f"Attempting request to {url}")  
     timeout = ClientTimeout(total=60)  # Adjust the timeout as needed  
     try:  
@@ -64,8 +65,20 @@ async def periodic_task(interval: int):
         await send_request()  
         await asyncio.sleep(interval)  
 
+async def keep_alive():  
+    """Keep the database connection alive by periodically executing a simple query."""  
+    async with AsyncSessionLocal() as session:  
+        while True:  
+            try:  
+                async with session.begin():  
+                    await session.execute(text("SELECT 1"))  # Use text() for raw SQL  
+                await asyncio.sleep(600)  # Sleep for 10 minutes  
+            except Exception as e:  
+                print(f"Error during keep-alive: {e}")  
+
 @app.on_event("startup")  
 async def startup_event():  
+    asyncio.create_task(keep_alive())  # Start the keep-alive task  
     loop = asyncio.get_event_loop()  
     # Schedule the periodic task to run every 1800 seconds (30 minutes)  
     loop.create_task(periodic_task(3600)) 
@@ -76,4 +89,4 @@ async def health_checker():
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=9000, reload=True)

@@ -7,13 +7,13 @@ from sqlalchemy import or_
 
 from datetime import datetime
 
-from schema import User, Audio, Scanner, UserType, PurchasedScanner, Alert, Address, Variables
+from schema import User, Audio, Scanner, UserType, PurchasedScanner, Alert, Address, Variables, Category
 from database import AsyncSessionLocal
 from app.Models.ScannerModel import FilterModel as ScannerFilterModel
 from app.Models.AlertModel import IdFilterModel
 from app.Models.AlertModel import FilterModel as AlertFilterModel
 
-
+import urllib.parse
 
 async def get_user_by_email(db: AsyncSession, email: str):
     stmt = select(User).filter(User.email == email)
@@ -184,6 +184,13 @@ async def get_state_and_county_list(db: AsyncSession):
 async def get_alerts_by_filter(db: AsyncSession, filter_model: AlertFilterModel, purchased_scanner_list):
     query = select(Alert)
     # Dynamically apply filters
+    
+    decoded_sub_category = urllib.parse.unquote(filter_model.sub_category)
+    print("filter_model.sub_category", decoded_sub_category)
+    
+    if filter_model.sub_category:
+        query = query.filter(Alert.sub_category == decoded_sub_category)
+    
     print("filter_model.scanner_id: ", filter_model.scanner_id)
     if filter_model.scanner_id:
         query = query.filter(Alert.scanner_id == filter_model.scanner_id)
@@ -284,3 +291,8 @@ async def get_variables(db: AsyncSession):
     result = await db.execute(query)
     return result.scalar_one_or_none()
     
+
+async def get_all_subcategories(db: AsyncSession, category: str):
+    stmt = select(Category).filter(Category.category == category) if category else select(Category)
+    result = await db.execute(stmt)
+    return result.scalars().all()

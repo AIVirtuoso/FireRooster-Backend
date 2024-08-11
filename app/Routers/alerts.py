@@ -8,7 +8,7 @@ from app.Utils.download_audios import download
 from app.Utils.remove_space import process_audio
 from app.Utils.whisper import stt_archive, add_addresses
 from app.Utils.scanners import update_scanners
-from app.Models.AlertModel import FilterModel, IdFilterModel
+from app.Models.AlertModel import FilterModel, IdFilterModel, CategoryFilterModel
 from app.Utils.auth import get_current_user
 from schema import User
 import app.Utils.crud as crud
@@ -28,7 +28,6 @@ async def update_alerts_router(db: Session = Depends(get_db)):
     
     for purchased_scanner_id in purchased_scanner_id_list:
         await stt_archive(db, purchased_scanner_id)
-    
     
     alerts = await crud.get_all_alerts(db)
     for alert in alerts:
@@ -51,3 +50,12 @@ async def get_alerts_by_filter_router(model: IdFilterModel, user: Annotated[User
     alert = await crud.get_alerts_by_id(db, model)
     addresses = await crud.get_addresses_by_alert_id(db, alert.id)
     return {"alert": alert, "addresses": addresses}
+
+@router.post('/all-subcategories')
+async def get_all_subcategories(model:CategoryFilterModel, user: Annotated[User, Depends(get_current_user)], db: Session = Depends(get_db)):
+    sub_categories = await crud.get_all_subcategories(db, model.category)
+       
+    # Sort by "Category"  
+    # sorted_list = sorted(sub_categories, key=lambda x: x.get('Category'))
+    
+    return sub_categories
