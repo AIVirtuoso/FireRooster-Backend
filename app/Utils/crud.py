@@ -185,10 +185,10 @@ async def get_alerts_by_filter(db: AsyncSession, filter_model: AlertFilterModel,
     query = select(Alert)
     # Dynamically apply filters
     
-    decoded_sub_category = urllib.parse.unquote(filter_model.sub_category)
-    print("filter_model.sub_category", decoded_sub_category)
     
     if filter_model.sub_category:
+        decoded_sub_category = urllib.parse.unquote(filter_model.sub_category)
+        print("filter_model.sub_category", decoded_sub_category)
         query = query.filter(Alert.sub_category == decoded_sub_category)
     
     print("filter_model.scanner_id: ", filter_model.scanner_id)
