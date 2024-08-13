@@ -51,7 +51,8 @@ async def get_alerts_by_filter_router(model: FilterModel, user: Annotated[User, 
 async def get_alerts_by_filter_router(model: IdFilterModel, user: Annotated[User, Depends(get_current_user)], db: Session = Depends(get_db)):
     alert = await crud.get_alerts_by_id(db, model)
     addresses = await crud.get_addresses_by_alert_id(db, alert.id)
-    return {"alert": alert, "addresses": addresses}
+    scanner = await crud.get_scanner_by_scanner_id(db, alert.scanner_id)
+    return {"alert": alert, "addresses": addresses, "scanner": scanner}
 
 
 
@@ -63,10 +64,11 @@ async def get_all_subcategories(model:CategoryFilterModel, user: Annotated[User,
 
     # Sort by "Category"  
     sorted_list = sorted(sub_categories_dicts, key=lambda x: x.get('category'))
-    
+    print("sorted_list: ", sorted_list)
     return sorted_list
 
 @router.post('/update-selected-subcategories')
 async def update_selected_subcategories(model: List[SelectedCategoryModel], user: Annotated[User, Depends(get_current_user)], db: Session = Depends(get_db)):
     for category_object in model:
         await crud.update_subcategories(db, category_object)
+    return {"status": True, "message": "Successfully updated"}

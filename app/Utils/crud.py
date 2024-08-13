@@ -299,6 +299,7 @@ async def get_all_subcategories(db: AsyncSession, category: str):
 
 async def update_subcategories(db: AsyncSession, category_object):
     stmt = select(Category).filter(Category.sub_category == category_object.sub_category)
+    # print("category_object: ", category_object)
     result = await db.execute(stmt)
     result = result.scalar_one_or_none()
     result.is_selected = category_object.is_selected
