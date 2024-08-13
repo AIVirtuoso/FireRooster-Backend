@@ -8,7 +8,7 @@ from app.Utils.download_audios import download
 from app.Utils.remove_space import process_audio
 from app.Utils.whisper import stt_archive, add_addresses
 from app.Utils.scanners import update_scanners
-from app.Models.AlertModel import FilterModel, IdFilterModel, CategoryFilterModel
+from app.Models.AlertModel import FilterModel, IdFilterModel, CategoryFilterModel, SelectedCategoryModel
 from app.Utils.auth import get_current_user
 from schema import User
 import app.Utils.crud as crud
@@ -18,7 +18,9 @@ router = APIRouter()
 async def get_db():
     async with AsyncSessionLocal() as session:
         yield session
-        
+
+def object_as_dict(obj):  
+    return {c.key: getattr(obj, c.key) for c in obj.__table__.columns}  
 
 @router.get('/update-alerts')
 async def update_alerts_router(db: Session = Depends(get_db)):
@@ -51,11 +53,20 @@ async def get_alerts_by_filter_router(model: IdFilterModel, user: Annotated[User
     addresses = await crud.get_addresses_by_alert_id(db, alert.id)
     return {"alert": alert, "addresses": addresses}
 
+
+
 @router.post('/all-subcategories')
 async def get_all_subcategories(model:CategoryFilterModel, user: Annotated[User, Depends(get_current_user)], db: Session = Depends(get_db)):
     sub_categories = await crud.get_all_subcategories(db, model.category)
-       
-    # Sort by "Category"  
-    # sorted_list = sorted(sub_categories, key=lambda x: x.get('Category'))
     
-    return sub_categories
+    sub_categories_dicts = [object_as_dict(sub) for sub in sub_categories]  
+
+    # Sort by "Category"  
+    sorted_list = sorted(sub_categories_dicts, key=lambda x: x.get('category'))
+    
+    return sorted_list
+
+@router.post('/update-selected-subcategories')
+async def update_selected_subcategories(model: List[SelectedCategoryModel], user: Annotated[User, Depends(get_current_user)], db: Session = Depends(get_db)):
+    for category_object in model:
+        await crud.update_subcategories(db, category_object)

@@ -81,3 +81,4 @@ class Category(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     category = Column(String)
     sub_category = Column(String)
+    is_selected = Column(Boolean)

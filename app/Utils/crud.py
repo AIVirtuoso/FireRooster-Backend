@@ -60,7 +60,7 @@ async def insert_audio(db: AsyncSession, audio, context, scanner_id):
         await db.refresh(new_audio)
         return new_audio
         
-    return new_user
+    return data
 
 async def insert_alert(db: AsyncSession, purchased_scanner_id, event):
     new_alert = Alert(headline=event['Headline'], description=event['Description'], address=event['Incident_Address'], scanner_id=purchased_scanner_id)
@@ -296,3 +296,11 @@ async def get_all_subcategories(db: AsyncSession, category: str):
     stmt = select(Category).filter(Category.category == category) if category else select(Category)
     result = await db.execute(stmt)
     return result.scalars().all()
+
+async def update_subcategories(db: AsyncSession, category_object):
+    stmt = select(Category).filter(Category.sub_category == category_object.sub_category)
+    result = await db.execute(stmt)
+    result = result.scalar_one_or_none()
+    result.is_selected = category_object.is_selected
+    await db.commit()
+    await db.refresh(result)
