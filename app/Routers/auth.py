@@ -17,7 +17,7 @@ async def get_db():
     async with AsyncSessionLocal() as session:
         yield session
 
-@router.post('/register')
+@router.post('/register/')
 async def register(model: SignUpModel, db: Session = Depends(get_db)):
     if model.password != model.password2:
         return JSONResponse(content={"success": "Both password must match"}, status_code=400)

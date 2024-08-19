@@ -4,8 +4,9 @@ from sqlalchemy.orm import joinedload, Session, aliased
 from sqlalchemy import func, delete
 from sqlalchemy import and_
 from sqlalchemy import or_
+from sqlalchemy import desc  
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from schema import User, Audio, Scanner, UserType, PurchasedScanner, Alert, Address, Variables, Category
 from database import AsyncSessionLocal
@@ -181,30 +182,48 @@ async def get_state_and_county_list(db: AsyncSession):
     return final_result
 
 
-async def get_alerts_by_filter(db: AsyncSession, filter_model: AlertFilterModel, purchased_scanner_list):
-    query = select(Alert)
-    # Dynamically apply filters
-    
+async def get_alerts_by_filter(db: AsyncSession, filter_model: AlertFilterModel, purchased_scanner_list, selected_sub_categories):
+    # query = select(Alert)
+    query = (  
+        select(Alert)  
+        .select_from(Alert)  # Set the base entity  
+        .join(Address, Address.alert_id == Alert.id)  # Provide the join condition  
+        .filter(Address.score >= 0.5)  # Add your score filter  
+    )  
+    query = query.order_by(desc(Alert.dateTime))
+    if filter_model.search:
+        query = query.where(Alert.description.ilike(f'%{filter_model.search}%'))
     
     if filter_model.sub_category:
         decoded_sub_category = urllib.parse.unquote(filter_model.sub_category)
-        print("filter_model.sub_category", decoded_sub_category)
         query = query.filter(Alert.sub_category == decoded_sub_category)
     
-    print("filter_model.scanner_id: ", filter_model.scanner_id)
+    if filter_model.category:
+        query = query.filter(Alert.category == filter_model.category)
+    
     if filter_model.scanner_id:
         query = query.filter(Alert.scanner_id == filter_model.scanner_id)
+        
+    if filter_model.selected_from:  
+        query = query.filter(Alert.dateTime >= filter_model.selected_from)  
+    
+    if filter_model.selected_to:  
+        end_date = filter_model.selected_to + timedelta(days=1)  
+        query = query.filter(Alert.dateTime < end_date)
+    
     
     query = query.filter(Alert.scanner_id.in_(purchased_scanner_list))
+    query = query.filter(Alert.sub_category.in_(selected_sub_categories))
 
     result = await db.execute(query)
     alerts = result.scalars().all()
     
-    print('alerts: ', alerts);
     total = len(alerts)
-    start = (filter_model.page - 1) * filter_model.limit
     
+    start = (filter_model.page - 1) * filter_model.limit
     alerts = alerts[start: start + filter_model.limit]
+    
+    print('alerts: ', alerts);
 
     return alerts, total
 
@@ -292,8 +311,19 @@ async def get_variables(db: AsyncSession):
     return result.scalar_one_or_none()
     
 
-async def get_all_subcategories(db: AsyncSession, category: str):
-    stmt = select(Category).filter(Category.category == category) if category else select(Category)
+async def get_all_subcategories(db: AsyncSession, filter_model):
+    query = select(Category)
+    if filter_model.category:
+        query = query.filter(Category.category == filter_model.category)
+        
+    if filter_model.search:
+        query = query.where(Category.sub_category.ilike(f'%{filter_model.search}%'))
+        
+    result = await db.execute(query)
+    return result.scalars().all()
+
+async def get_selected_subcategories(db: AsyncSession):
+    stmt = select(Category).filter(Category.is_selected == 1)
     result = await db.execute(stmt)
     return result.scalars().all()
 
@@ -305,3 +335,8 @@ async def update_subcategories(db: AsyncSession, category_object):
     result.is_selected = category_object.is_selected
     await db.commit()
     await db.refresh(result)
+
+async def get_address_by_alert_id(db: AsyncSession, id):
+    stmt = select(Address).filter(Address.alert_id == id)
+    result = await db.execute(stmt)
+    return result.scalars().all()
