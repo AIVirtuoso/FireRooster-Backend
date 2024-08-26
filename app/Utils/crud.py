@@ -49,6 +49,14 @@ async def get_audio_by_scanner_id(db: AsyncSession, scanner_id):
     result = await db.execute(stmt)
     return result.scalars().all()
 
+async def get_audio_by_alert(db: AsyncSession, alert):
+    query = select(Audio).filter(Audio.dateTime == alert.dateTime)
+    query = query.filter(Audio.scanner_id == alert.scanner_id)
+    query = query.limit(1)
+    result = await db.execute(query)
+    print("result: ", result)
+    return result.scalar_one_or_none()
+
 async def insert_audio(db: AsyncSession, audio, context, scanner_id):
     stmt = select(Audio).filter(Audio.file_name == audio)
     result = await db.execute(stmt)
@@ -77,6 +85,16 @@ async def get_total_alerts(db: AsyncSession) -> int:
     total_alerts = result.scalar_one()
     
     return total_alerts
+
+async def check_alert_as_visited(db: AsyncSession, alert_id):
+    query = select(Alert).filter(Alert.id == alert_id)
+    result = await db.execute(query)
+    result = result.scalar_one_or_none()
+    updated_alert = result
+    updated_alert.is_visited = 1
+    print("updated_variables", updated_alert.id, updated_alert.is_visited)
+    await db.commit()
+    await db.refresh(updated_alert)
         
 
 async def get_audios_by_scanner_id(db: AsyncSession, purchased_scanner_id):
@@ -184,13 +202,17 @@ async def get_state_and_county_list(db: AsyncSession):
 
 async def get_alerts_by_filter(db: AsyncSession, filter_model: AlertFilterModel, purchased_scanner_list, selected_sub_categories):
     # query = select(Alert)
+    subquery = (  
+        select(func.distinct(Alert.id))  
+        .select_from(Alert)  
+        .join(Address, Address.alert_id == Alert.id)  
+        .filter(Address.score > 0.5)
+    ).subquery()
     query = (  
         select(Alert)  
-        .select_from(Alert)  # Set the base entity  
-        .join(Address, Address.alert_id == Alert.id)  # Provide the join condition  
-        .filter(Address.score >= 0.5)  # Add your score filter  
+        .where(Alert.id.in_(subquery))  
+        .order_by(desc(Alert.dateTime))  
     )  
-    query = query.order_by(desc(Alert.dateTime))
     if filter_model.search:
         query = query.where(Alert.description.ilike(f'%{filter_model.search}%'))
     

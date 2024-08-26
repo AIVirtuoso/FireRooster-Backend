@@ -63,6 +63,7 @@ class Alert(Base):
     address = Column(String)
     scanner_id = Column(Integer)
     dateTime = Column(DateTime)
+    is_visited = Column(Integer)
     
 class Address(Base):
     __tablename__ = "address_table"

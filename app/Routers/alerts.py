@@ -60,10 +60,12 @@ async def get_alerts_by_filter_router(model: FilterModel, user: Annotated[User, 
 
 @router.post('/get-alert-by-id')
 async def get_alerts_by_filter_router(model: IdFilterModel, user: Annotated[User, Depends(get_current_user)], db: Session = Depends(get_db)):
+    await crud.check_alert_as_visited(db, model.alert_id)
     alert = await crud.get_alerts_by_id(db, model)
     addresses = await crud.get_addresses_by_alert_id(db, alert.id)
     scanner = await crud.get_scanner_by_scanner_id(db, alert.scanner_id)
-    return {"alert": alert, "addresses": addresses, "scanner": scanner}
+    audio = await crud.get_audio_by_alert(db, alert)
+    return {"alert": alert, "addresses": addresses, "scanner": scanner, "audio": audio}
 
 
 
