@@ -75,7 +75,7 @@ class Address(Base):
     type = Column(String)
     scanner_id = Column(Integer)
     dateTime = Column(DateTime)
-    
+    contact_info = Column(JSON)
     
 class Variables(Base):
     __tablename__ = "variables_table"
