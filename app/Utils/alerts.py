@@ -37,4 +37,59 @@ def get_score_by_location_type(location_type):
         return 0.5
     elif location_type == 'APPROXIMATE':
         return 0.3
+
+
+def get_place_details(place_id):
+    # Prepare the request for the Places API
+    place_url = f"https://maps.googleapis.com/maps/api/place/details/json?place_id={place_id}&key={api_key}"
     
+    # Make the API request
+    response = requests.get(place_url)
+    place_data = response.json()
+    
+    if place_data['status'] == 'OK':
+        # Return the types from the Places API response
+        return place_data['result'].get('types', [])
+    else:
+        return []
+
+def is_residential_address(types):
+    # Define all possible residential-related types
+    residential_keywords = {
+        'street_address', 'route', 'locality', 'sublocality', 
+        'neighborhood', 'postal_code', 'premise', 'subpremise', 'political'
+    }
+    
+    for t in types:
+        if t in residential_keywords:
+            return True
+    return False
+
+def is_intersection(types):
+    for t in types:
+        if t == "intersection":
+            return True
+    return False
+
+def validate_address(result):
+    # Step 1: Get Geocode data (place_id and types)
+    place_id = result.get('place_id')
+    geocode_types = result.get('types')    
+    
+    if not place_id:
+        return "Invalid address or unable to fetch geocode data."
+
+    # Step 2: Get Place details (more detailed types from Places API)
+    place_types = get_place_details(place_id)
+    
+    # Combine geocode types and place types
+    all_types = set(geocode_types + place_types)
+
+    # Step 3: Determine if it's a residential or commercial address
+    if is_residential_address(all_types):
+        return "Residential Address"
+    elif is_intersection(all_types):
+        return "Intersection"
+    else:
+        print("all_types: ", all_types)
+        return "Commercial Address"

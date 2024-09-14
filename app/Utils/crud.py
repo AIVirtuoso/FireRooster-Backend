@@ -8,13 +8,16 @@ from sqlalchemy import desc
 
 from datetime import datetime, timedelta
 
-from schema import User, Audio, Scanner, UserType, PurchasedScanner, Alert, Address, Variables, Category
+from schema import User, Audio, Scanner, UserType, PurchasedScanner, Alert, Address, Variables, Category, FireDistrict
 from database import AsyncSessionLocal
 from app.Models.ScannerModel import FilterModel as ScannerFilterModel
 from app.Models.AlertModel import IdFilterModel
 from app.Models.AlertModel import FilterModel as AlertFilterModel
 
 import urllib.parse
+import spacy
+
+nlp = spacy.load("en_core_web_md")
 
 async def get_user_by_email(db: AsyncSession, email: str):
     stmt = select(User).filter(User.email == email)
@@ -202,17 +205,23 @@ async def get_state_and_county_list(db: AsyncSession):
 
 async def get_alerts_by_filter(db: AsyncSession, filter_model: AlertFilterModel, purchased_scanner_list, selected_sub_categories):
     # query = select(Alert)
+    AlertAlias = aliased(Alert)  
+    AddressAlias = aliased(Address)  
+
     subquery = (  
-        select(func.distinct(Alert.id))  
-        .select_from(Alert)  
-        .join(Address, Address.alert_id == Alert.id)  
-        .filter(Address.score > 0.5)
-    ).subquery()
+        select(func.distinct(AlertAlias.id))  
+        .select_from(AlertAlias)  
+        .join(AddressAlias, AddressAlias.alert_id == AlertAlias.id)  
+        .filter(AddressAlias.score > 0.5)  
+    ).subquery()  
     query = (  
         select(Alert)  
         .where(Alert.id.in_(subquery))  
         .order_by(desc(Alert.dateTime))  
-    )  
+    )
+    result = await db.execute(query)
+    alerts = result.scalars().all()
+    print("alertS: ", alerts)
     if filter_model.search:
         query = query.where(Alert.description.ilike(f'%{filter_model.search}%'))
     
@@ -232,7 +241,6 @@ async def get_alerts_by_filter(db: AsyncSession, filter_model: AlertFilterModel,
     if filter_model.selected_to:  
         end_date = filter_model.selected_to + timedelta(days=1)  
         query = query.filter(Alert.dateTime < end_date)
-    
     
     query = query.filter(Alert.scanner_id.in_(purchased_scanner_list))
     query = query.filter(Alert.sub_category.in_(selected_sub_categories))
@@ -297,8 +305,8 @@ async def get_all_purchased_scanners(db: AsyncSession):
     result = await db.execute(stmt)
     return result.scalars().all()
 
-async def insert_validated_address(db: AsyncSession, address, score, alert_id):
-    new_address = Address(address=address, score=score, alert_id=alert_id)
+async def insert_validated_address(db: AsyncSession, address, score, alert_id, type, scanner_id, dateTime):
+    new_address = Address(address=address, score=score, alert_id=alert_id, type=type, scanner_id=scanner_id, dateTime=dateTime)
     db.add(new_address)
     await db.commit()
     await db.refresh(new_address)
@@ -362,3 +370,76 @@ async def get_address_by_alert_id(db: AsyncSession, id):
     stmt = select(Address).filter(Address.alert_id == id)
     result = await db.execute(stmt)
     return result.scalars().all()
+
+async def insert_csv(db:AsyncSession, csv_context_json, state, county):
+    query = select(Scanner).filter(  
+        and_(  
+            Scanner.state_name == state,  
+            Scanner.county_name == county  
+        )  
+    ) 
+    result = await db.execute(query)
+    data = result.scalars().all()
+    if not data:
+        return None
+    
+    stmt = select(FireDistrict).filter(FireDistrict.state == state)
+    stmt = stmt.filter(FireDistrict.county == county)
+    result = await db.execute(stmt)
+    data = result.scalar_one_or_none()
+    if not data:
+        new_district = FireDistrict(json_data=csv_context_json, state=state, county=county)
+        db.add(new_district)
+        await db.commit()
+        await db.refresh(new_district)
+        return new_district
+    else:
+        data.context = csv_context_json
+        await db.commit()
+        await db.refresh(data)
+        return data
+
+
+async def calculate_similarity(alert, unique_alerts, threshold=0.9):
+    alert_doc = nlp(alert.description)
+    for unique_alert in unique_alerts:
+        unique_doc = nlp(unique_alert.description)
+        if alert_doc.similarity(unique_doc) > threshold:
+            return False
+    return True
+
+async def remove_duplicated_alerts(db: AsyncSession):
+    query = select(Alert)
+    results = await db.execute(query)
+    alerts = results.scalars().all()
+    print("Got all data!")
+
+    unique_alerts = []
+    for alert in alerts:
+        alert_doc = nlp(alert.description)
+        last_10_unique_alerts = unique_alerts[-10:]
+        is_duplicate = any(alert_doc.similarity(nlp(unique_alert.description)) > 0.9 for unique_alert in last_10_unique_alerts)
+        if not is_duplicate:
+            unique_alerts.append(alert)
+    print("Filtered unique data!")
+    
+    await db.execute(delete(Alert))
+    print("Deleted current data!")
+
+    for unique_alert in unique_alerts:
+        db.add(Alert(
+            category=unique_alert.category,
+            sub_category=unique_alert.sub_category,
+            headline=unique_alert.headline,
+            description=unique_alert.description,
+            address=unique_alert.address,
+            scanner_id=unique_alert.scanner_id,
+            dateTime=unique_alert.dateTime,
+            is_visited=unique_alert.is_visited
+        ))
+    print("Added new data!")
+
+    await db.commit()
+    print("Committed!")
+
+    return "success"

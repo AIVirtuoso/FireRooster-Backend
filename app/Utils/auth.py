@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/signin")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/token")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 SECRET_KEY = os.getenv('SECRET_KEY')

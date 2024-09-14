@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, ForeignKey, Boolean, Float, DateTime
+from sqlalchemy import Column, String, Integer, ForeignKey, Boolean, Float, DateTime, JSON
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -33,6 +33,7 @@ class Audio(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     file_name = Column(String)
     context = Column(String)
+    cleared_context = Column(String)
     scanner_id = Column(Integer)
     dateTime = Column(DateTime)
 
@@ -71,6 +72,10 @@ class Address(Base):
     address = Column(String)
     score = Column(Float)
     alert_id = Column(Integer)
+    type = Column(String)
+    scanner_id = Column(Integer)
+    dateTime = Column(DateTime)
+    
     
 class Variables(Base):
     __tablename__ = "variables_table"
@@ -83,3 +88,10 @@ class Category(Base):
     category = Column(String)
     sub_category = Column(String)
     is_selected = Column(Integer)
+
+class FireDistrict(Base):
+    __tablename__ = "fire_district_table"
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    state = Column(String)
+    county = Column(String)
+    json_data = Column(JSON)

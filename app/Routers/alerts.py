@@ -10,16 +10,14 @@ from app.Utils.whisper import stt_archive, add_addresses
 from app.Utils.scanners import update_scanners
 from app.Models.AlertModel import FilterModel, IdFilterModel, CategoryFilterModel, SelectedCategoryModel
 from app.Utils.auth import get_current_user
-from app.Utils.alerts import get_geocode_data, get_score_by_location_type
+from app.Utils.alerts import get_geocode_data, get_score_by_location_type, validate_address
 
 from schema import User, Alert
 import app.Utils.crud as crud
 
-from datetime import datetime  
-
+from datetime import datetime
 
 router = APIRouter()
-
 
 async def get_db():
     async with AsyncSessionLocal() as session:
@@ -51,7 +49,7 @@ async def get_alerts_by_filter_router(model: FilterModel, user: Annotated[User, 
     purchased_scanner_id_list = list({purchased_scanner.scanner_id for purchased_scanner in purchased_scanner_list}) # remove duplicate
     
     alerts, total = await crud.get_alerts_by_filter(db, model, purchased_scanner_id_list, selected_sub_categories)
-    
+    print("alerts-totol: ", purchased_scanner_id_list)
     result = []
     for alert in alerts:
         addresses = await crud.get_addresses_by_alert_id(db, alert.id)
@@ -95,28 +93,40 @@ async def update_addresses_router(db: Session = Depends(get_db)):
         try:
             formatted_addresses = get_geocode_data(alert.address)
             
-            print("alert id: ", alert.id)
+            # print("alert id: ", alert.id)
             
-            address = await crud.get_address_by_alert_id(db, alert.id)
-            if address:
-                print("address: ", address)
-                continue
+            # address = await crud.get_address_by_alert_id(db, alert.id)
+            # if address:
+            #     print("address: ", address)
+            #     continue
             
             for result in formatted_addresses:
                 formatted_address = result.get('formatted_address')
+                type = validate_address(result)
                 # location = result.get('geometry', {}).get('location', {})
                 # lat = location.get('lat')
                 # lng = location.get('lng')
                 score = get_score_by_location_type(result.get('geometry').get('location_type'))
-                print("score: ", score)
-                print("formatted_address-: ", formatted_address)
+                if type == "Commercial Address":
+                    print("score: ", score)
+                    print("formatted_address-: ", formatted_address)
+                    print("type: ", type)
+                    
                 await crud.insert_validated_address(
                     db,
                     formatted_address,
                     score,
-                    alert.id
+                    alert.id,
+                    type,
+                    alert.scanner_id,
+                    alert.dateTime
                 )
-            print("alert.address: ", alert.address)
-            print("formatted_addresses: ", formatted_addresses)
+            # print("alert.address: ", alert.address)
+            # print("formatted_addresses: ", formatted_addresses)
         except Exception as e:
             print(e)
+
+@router.post('/remove-duplicated-alerts')
+async def remove_duplicated_alerts(db: Session = Depends(get_db)):
+    message = await crud.remove_duplicated_alerts(db)
+    return {"message": message}
