@@ -76,6 +76,7 @@ class Address(Base):
     scanner_id = Column(Integer)
     dateTime = Column(DateTime)
     contact_info = Column(JSON)
+    spokeo_status = Column(Integer)
     
 class Variables(Base):
     __tablename__ = "variables_table"

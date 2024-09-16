@@ -3,19 +3,20 @@ from fastapi.responses import JSONResponse
 from database import AsyncSessionLocal
 from sqlalchemy.orm import Session
 from typing import List, Annotated
+from datetime import datetime
+import requests
 
 from app.Utils.download_audios import download
 from app.Utils.remove_space import process_audio
 from app.Utils.whisper import stt_archive, add_addresses
 from app.Utils.scanners import update_scanners
-from app.Models.AlertModel import FilterModel, IdFilterModel, CategoryFilterModel, SelectedCategoryModel
+from app.Models.AlertModel import FilterModel, IdFilterModel, CategoryFilterModel, SelectedCategoryModel, UnlockContactInfoModel
 from app.Utils.auth import get_current_user
 from app.Utils.alerts import get_geocode_data, get_score_by_location_type, validate_address
 
 from schema import User, Alert
 import app.Utils.crud as crud
 
-from datetime import datetime
 
 router = APIRouter()
 
@@ -130,3 +131,22 @@ async def update_addresses_router(db: Session = Depends(get_db)):
 async def remove_duplicated_alerts(db: Session = Depends(get_db)):
     message = await crud.remove_duplicated_alerts(db)
     return {"message": message}
+
+@router.post('/unlock-contact-info')
+async def unlock_contact_info_router(model: UnlockContactInfoModel, db: Session = Depends(get_db)):
+    url = "http://108.61.203.106:7000/api/v1/verify-address"
+    
+    try:  
+        response = requests.get(url, params={"address_id": model.address_id})  
+        
+        # Check if the request was successful
+        if response.status_code == 200:
+            return response.json()
+            
+        else:
+            return False
+    
+    except requests.exceptions.RequestException as e:  
+        print(f"An error occurred: {e}")
+        return False
+

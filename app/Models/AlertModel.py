@@ -25,3 +25,6 @@ class IdFilterModel(BaseModel):
 class CategoryFilterModel(BaseModel):
     category: Optional[str]
     search: Optional[str] = ""
+    
+class UnlockContactInfoModel(BaseModel):
+    address_id: int

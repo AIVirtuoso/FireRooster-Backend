@@ -318,6 +318,11 @@ async def get_addresses_by_alert_id(db: AsyncSession, alert_id):
     result = await db.execute(stmt)
     return result.scalars().all()
 
+async def get_address_by_id(db: AsyncSession, id):
+    stmt = select(Address).filter(Address.id == id)
+    result = await db.execute(stmt)
+    return result.scalar_one_or_none()
+
 async def set_variables(db: AsyncSession, prompt):
     query = select(Variables)
     result = await db.execute(query)
