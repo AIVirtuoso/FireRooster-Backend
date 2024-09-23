@@ -81,6 +81,8 @@ async def get_all_subcategories(model:CategoryFilterModel, user: Annotated[User,
 
 @router.post('/update-selected-subcategories')
 async def update_selected_subcategories(model: List[SelectedCategoryModel], user: Annotated[User, Depends(get_current_user)], db: Session = Depends(get_db)):
+    print('here')
+    print(model)
     for category_object in model:
         await crud.update_subcategories(db, category_object)
     return {"status": True, "message": "Successfully updated"}

@@ -38,6 +38,17 @@ async def get_state_and_county_list_router(user: Annotated[User, Depends(get_cur
     data = await crud.get_state_and_county_list(db)
     return data
 
+@router.get('/get-selected-scanner-list')
+async def get_state_and_county_list_router(user: Annotated[User, Depends(get_current_user)], db: Session = Depends(get_db)):
+    purchased_scanner_list = await crud.get_purchased_scanners_by_user(db, user.id)
+    my_scanner_list = []
+    for purchased_scanner in purchased_scanner_list:
+        print("purchased_scanner.scanner_id: ", purchased_scanner.scanner_id)
+        scanner = await crud.get_scanner_by_scanner_id(db, purchased_scanner.scanner_id)
+        my_scanner_list.append(scanner)
+    return my_scanner_list
+    
+
 @router.post('/get-my-scanners')
 async def get_my_scanner_router(model: FilterModel, user: Annotated[User, Depends(get_current_user)], db: Session = Depends(get_db)):
     purchased_scanner_list = await crud.get_purchased_scanners_by_user(db, user.id)
@@ -51,6 +62,9 @@ async def get_my_scanner_router(model: FilterModel, user: Annotated[User, Depend
             continue
         
         if model.county_id and (scanner.county_id not in model.county_id):
+            continue
+        
+        if model.search and (model.search.lower() not in scanner.scanner_title.lower()):
             continue
             
         print(model.county_id, scanner.county_id)
@@ -97,12 +111,12 @@ async def purchase_scanners_router(model: PurchaseScannerModel, user: Annotated[
     
     print("scanner_id_list: ", scanner_id_list)
     
-    scanner_list = await crud.get_scanners_by_scanner_id_list(db, scanner_id_list)
+    # scanner_list = await crud.get_scanners_by_scanner_id_list(db, scanner_id_list)
     
     # await crud.delete_purchased_scanners_by_user_id(db, user.id)
     usertype = await crud.get_user_type_by_id(db, user.user_type_id)
     
-    print(scanner_list)
+    # print(scanner_list)
     
     # if not usertype:
     #     return {"status": "Please subscribe your package!"}
@@ -110,8 +124,8 @@ async def purchase_scanners_router(model: PurchaseScannerModel, user: Annotated[
     # if not validate_tier_limit(usertype, scanner_list):
     #     return {"status": "Exceed package limit!"}
     
-    for scanner in scanner_list:
-        scanner_id = scanner.scanner_id
+    for scanner_id in scanner_id_list:
+        # scanner_id = scanner.scanner_id
         try:
             await crud.insert_purchased_scanners(db, user.id, scanner_id)
         except Exception as e:

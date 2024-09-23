@@ -24,7 +24,7 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     is_superuser = Column(Boolean, default=False)
     stripe_id = Column(String, nullable=True)
-    
+    phone_number = Column(String, nullable=True)
     user_type_id = Column(Integer, ForeignKey("usertype_table.id"), nullable=True)
     user_type = relationship("UserType")
 

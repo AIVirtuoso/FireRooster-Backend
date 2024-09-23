@@ -22,6 +22,7 @@ async def get_db():
 @router.post('/set-profile')
 async def set_profile_router(model: SetProfileModel, user: Annotated[User, Depends(get_current_user)],  db: Session = Depends(get_db)):
     await crud.set_variables(db, model.prompt)
+    await crud.update_user(db, model, user.email)
     return {"status": True, "message": "Set Profile Successfully"}
 
 @router.get('/get-profile')

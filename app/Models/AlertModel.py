@@ -5,7 +5,8 @@ from datetime import datetime
 class FilterModel(BaseModel):
     limit: Optional[int] = 10
     page: Optional[int] = 1
-    search: Optional[str] = ""
+    headSearch: Optional[str] = ""
+    decSearch: Optional[str] = ""
     scanner_id: Optional[int] = None
     category: Optional[str] = None
     sub_category: Optional[str] = None

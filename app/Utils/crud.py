@@ -42,6 +42,18 @@ async def create_user(db: AsyncSession, **kwargs):
     await db.refresh(new_user)
     return new_user
 
+async def update_user(db: AsyncSession, model, email):
+    stmt = select(User).filter(User.email == email)
+    result = await db.execute(stmt)
+    user = result.scalar_one_or_none()
+    user.email = model.email
+    user.first_name = model.first_name
+    user.last_name = model.last_name
+    user.phone_number = model.phone_number
+    await db.commit()
+    await db.refresh(user)
+    return user
+
 async def get_audio_by_filename(db: AsyncSession, filename):
     stmt = select(Audio).filter(Audio.file_name == filename)
     result = await db.execute(stmt)
@@ -222,8 +234,11 @@ async def get_alerts_by_filter(db: AsyncSession, filter_model: AlertFilterModel,
     result = await db.execute(query)
     alerts = result.scalars().all()
     print("alertS: ", alerts)
-    if filter_model.search:
-        query = query.where(Alert.description.ilike(f'%{filter_model.search}%'))
+    if filter_model.headSearch:
+        query = query.where(Alert.headline.ilike(f'%{filter_model.headSearch}%'))
+    
+    if filter_model.decSearch:
+        query = query.where(Alert.description.ilike(f'%{filter_model.decSearch}%'))
     
     if filter_model.sub_category:
         decoded_sub_category = urllib.parse.unquote(filter_model.sub_category)
@@ -276,12 +291,18 @@ async def get_alerts_by_id(db: AsyncSession, filter_model: IdFilterModel):
     return result.scalar_one_or_none()
 
 async def insert_purchased_scanners(db: AsyncSession, user_id, scanner_id):
-    new_purchased_scanner = PurchasedScanner(user_id=user_id, scanner_id=scanner_id)
-    print("new_purchased_scanner: ", new_purchased_scanner)
-    db.add(new_purchased_scanner)
-    await db.commit()
-    await db.refresh(new_purchased_scanner)
-    return new_purchased_scanner
+    stmt = select(PurchasedScanner).filter(PurchasedScanner.user_id == user_id)
+    stmt = stmt.filter(PurchasedScanner.scanner_id == scanner_id)
+    result = await db.execute(stmt)
+    result = result.scalars().all()
+    
+    if not result:
+        new_purchased_scanner = PurchasedScanner(user_id=user_id, scanner_id=scanner_id)
+        print("new_purchased_scanner: ", new_purchased_scanner)
+        db.add(new_purchased_scanner)
+        await db.commit()
+        await db.refresh(new_purchased_scanner)
+        return new_purchased_scanner
 
 async def delete_purchased_scanners_by_user_id(db: AsyncSession, user_id: int):
     # Define the delete statement

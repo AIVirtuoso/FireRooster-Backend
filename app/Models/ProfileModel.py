@@ -6,3 +6,4 @@ class SetProfileModel(BaseModel):
     last_name: str
     email: str
     prompt: str
+    phone_number: str
