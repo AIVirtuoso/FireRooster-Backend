@@ -48,9 +48,7 @@ async def get_alerts_by_filter_router(model: FilterModel, user: Annotated[User, 
     selected_sub_categories = [item.sub_category for item in selected_sub_categories]
     purchased_scanner_list = await crud.get_purchased_scanners_by_user(db, user.id)
     purchased_scanner_id_list = list({purchased_scanner.scanner_id for purchased_scanner in purchased_scanner_list}) # remove duplicate
-    
     alerts, total = await crud.get_alerts_by_filter(db, model, purchased_scanner_id_list, selected_sub_categories)
-    print("alerts-totol: ", purchased_scanner_id_list)
     result = []
     for alert in alerts:
         addresses = await crud.get_addresses_by_alert_id(db, alert.id)
@@ -65,8 +63,6 @@ async def get_alerts_by_filter_router(model: IdFilterModel, user: Annotated[User
     scanner = await crud.get_scanner_by_scanner_id(db, alert.scanner_id)
     audio = await crud.get_audio_by_alert(db, alert)
     return {"alert": alert, "addresses": addresses, "scanner": scanner, "audio": audio}
-
-
 
 @router.post('/all-subcategories')
 async def get_all_subcategories(model:CategoryFilterModel, user: Annotated[User, Depends(get_current_user)], db: Session = Depends(get_db)):
@@ -151,4 +147,3 @@ async def unlock_contact_info_router(model: UnlockContactInfoModel, db: Session 
     except requests.exceptions.RequestException as e:  
         print(f"An error occurred: {e}")
         return False
-

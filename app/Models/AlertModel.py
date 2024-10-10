@@ -12,6 +12,7 @@ class FilterModel(BaseModel):
     sub_category: Optional[str] = None
     selected_from: Optional[datetime] = None  
     selected_to: Optional[datetime] = None  
+    stars: Optional[int] = None  
 
 class SelectedCategoryModel(BaseModel):
     is_selected: Optional[bool]

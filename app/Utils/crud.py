@@ -224,7 +224,7 @@ async def get_alerts_by_filter(db: AsyncSession, filter_model: AlertFilterModel,
         select(func.distinct(AlertAlias.id))  
         .select_from(AlertAlias)  
         .join(AddressAlias, AddressAlias.alert_id == AlertAlias.id)  
-        .filter(AddressAlias.score > 0.5)  
+        .filter(AddressAlias.score >= 0.5)  
     ).subquery()  
     query = (  
         select(Alert)  
@@ -247,8 +247,12 @@ async def get_alerts_by_filter(db: AsyncSession, filter_model: AlertFilterModel,
     if filter_model.category:
         query = query.filter(Alert.category == filter_model.category)
     
+
     if filter_model.scanner_id:
         query = query.filter(Alert.scanner_id == filter_model.scanner_id)
+        
+    if filter_model.stars:
+        query = query.filter(Alert.rating >= filter_model.stars)
         
     if filter_model.selected_from:  
         query = query.filter(Alert.dateTime >= filter_model.selected_from)  
@@ -257,8 +261,8 @@ async def get_alerts_by_filter(db: AsyncSession, filter_model: AlertFilterModel,
         end_date = filter_model.selected_to + timedelta(days=1)  
         query = query.filter(Alert.dateTime < end_date)
     
-    query = query.filter(Alert.scanner_id.in_(purchased_scanner_list))
-    query = query.filter(Alert.sub_category.in_(selected_sub_categories))
+    # query = query.filter(Alert.scanner_id.in_(purchased_scanner_list))
+    # query = query.filter(Alert.sub_category.in_(selected_sub_categories))
 
     result = await db.execute(query)
     alerts = result.scalars().all()

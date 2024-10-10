@@ -36,6 +36,7 @@ class Audio(Base):
     cleared_context = Column(String)
     scanner_id = Column(Integer)
     dateTime = Column(DateTime)
+    assembly_transcript = Column(String)
 
 class Scanner(Base):
     __tablename__ = "scanner_table"
@@ -65,6 +66,12 @@ class Alert(Base):
     scanner_id = Column(Integer)
     dateTime = Column(DateTime)
     is_visited = Column(Integer)
+    rating = Column(Integer)
+    rating_title = Column(String)
+    rating_criteria = Column(String)
+    ten_codes = Column(String)
+    thumb = Column(Integer)
+    feedback = Column(JSON)
     
 class Address(Base):
     __tablename__ = "address_table"

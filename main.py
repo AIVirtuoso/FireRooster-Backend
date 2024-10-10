@@ -45,7 +45,7 @@ app.include_router(profile.router, prefix="/api/profile")
 
 
 async def send_request():
-    url = "http://108.61.203.106:7000/api/v1/update-alerts"  
+    url = "http://108.61.203.106:8000/api/v1/update-alerts"  
     logging.info(f"Attempting request to {url}")  
     timeout = ClientTimeout(total=60)  # Adjust the timeout as needed  
     try:  

@@ -46,7 +46,7 @@ async def signin_for_access_token(model: SignInModel, db: Session = Depends(get_
     # if user.approved == 0:
     #     return JSONResponse(content={"message": "This email is not approved!"}, status_code=400)
     access_token = Auth.create_access_token(data={"sub": user.email})  # Assuming 'user' is an object
-    user_to_return = {'email': user.email, 'hashed_password': user.hashed_password, 'first_name': user.first_name, 'last_name': user.last_name}
+    user_to_return = {'email': user.email, 'hashed_password': user.hashed_password, 'first_name': user.first_name, 'last_name': user.last_name, "tier": user.user_type_id}
     return {"access_token": access_token, "token_type": "bearer", "user": user_to_return}
 
 @router.get('/user')
