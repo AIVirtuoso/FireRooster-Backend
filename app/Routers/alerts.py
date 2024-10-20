@@ -51,8 +51,8 @@ async def get_alerts_by_filter_router(model: FilterModel, user: Annotated[User, 
     alerts, total = await crud.get_alerts_by_filter(db, model, purchased_scanner_id_list, selected_sub_categories)
     result = []
     for alert in alerts:
-        addresses = await crud.get_addresses_by_alert_id(db, alert.id)
-        result.append({"alert": alert, "addresses": addresses})
+        scanner = await crud.get_scanner_by_scanner_id(db, alert.scanner_id)
+        result.append({"alert": alert, "scanner": scanner})
     return {"alerts": result, "pagination": {"total": total}}
 
 @router.post('/get-alert-by-id')

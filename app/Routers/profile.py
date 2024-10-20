@@ -28,7 +28,8 @@ async def set_profile_router(model: SetProfileModel, user: Annotated[User, Depen
 @router.get('/get-profile')
 async def get_profile_router(user: Annotated[User, Depends(get_current_user)],  db: Session = Depends(get_db)):
     variables = await crud.get_variables(db)
-    return {"first_name": user.first_name, "last_name": user.last_name, "email": user.email, "prompt": variables.prompt if variables != None else ""}
+    prompt =  variables.prompt if variables != None else ""
+    return {"first_name": user.first_name, "last_name": user.last_name, "email": user.email, "phone_number": user.phone_number, "prompt": prompt}
 
 @router.get('/get-prompt')
 async def get_profile_router(db: Session = Depends(get_db)):

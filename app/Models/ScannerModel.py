@@ -15,3 +15,6 @@ class PurchaseScannerModel(BaseModel):
 class DeleteScannerModel(BaseModel):
     scanner_id: int
 
+class ToggleScraperModel(BaseModel):
+    scraper_status: int
+

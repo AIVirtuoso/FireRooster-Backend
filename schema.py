@@ -72,7 +72,9 @@ class Alert(Base):
     ten_codes = Column(String)
     thumb = Column(Integer)
     feedback = Column(JSON)
-    
+    response_origin_address = Column(String)
+    response_origin_radius = Column(String)
+
 class Address(Base):
     __tablename__ = "address_table"
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -89,7 +91,9 @@ class Variables(Base):
     __tablename__ = "variables_table"
     id = Column(Integer, primary_key=True, autoincrement=True)
     prompt = Column(String)
-    
+    scraper_status = Column(Integer)
+    transcript_prompt = Column(String)
+
 class Category(Base):
     __tablename__ = "category_table"
     id = Column(Integer, primary_key=True, autoincrement=True)

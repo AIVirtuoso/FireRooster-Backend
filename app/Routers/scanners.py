@@ -10,7 +10,7 @@ from app.Utils.remove_space import process_audio
 from app.Utils.whisper import stt_archive
 from app.Utils.scanners import update_scanners, validate_tier_limit
 from app.Utils.auth import get_current_user
-from app.Models.ScannerModel import FilterModel, PurchaseScannerModel, DeleteScannerModel
+from app.Models.ScannerModel import FilterModel, PurchaseScannerModel, DeleteScannerModel, ToggleScraperModel
 from schema import User
 import app.Utils.crud as crud
 
@@ -113,7 +113,7 @@ async def purchase_scanners_router(model: PurchaseScannerModel, user: Annotated[
     
     # scanner_list = await crud.get_scanners_by_scanner_id_list(db, scanner_id_list)
     
-    # await crud.delete_purchased_scanners_by_user_id(db, user.id)
+    await crud.delete_purchased_scanners_by_user_id(db, user.id)
     usertype = await crud.get_user_type_by_id(db, user.user_type_id)
     
     # print(scanner_list)
@@ -137,3 +137,14 @@ async def purchase_scanners_router(model: PurchaseScannerModel, user: Annotated[
 async def delete_purchased_scanner(model: DeleteScannerModel, user: Annotated[User, Depends(get_current_user)], db: Session = Depends(get_db)):
     await crud.delete_purchased_scanners_by_scanner_id(db, model.scanner_id, user.id)
     return {"status": True, "message": "Successfully purchased"} 
+
+@router.post('/set-scraper-status')
+async def toggle_scraper_router(model: ToggleScraperModel, user: Annotated[User, Depends(get_current_user)], db: Session = Depends(get_db)):
+    await crud.update_scraper_status(db, model.scraper_status)
+    return {"status": True, "message": "Turned on successfully" if model.scraper_status else "Turned off successfully"}
+
+@router.post('/get-scraper-status')
+async def toggle_scraper_router(model: ToggleScraperModel, user: Annotated[User, Depends(get_current_user)], db: Session = Depends(get_db)):
+    variables = await crud.get_variables(db)
+    scraper_status = variables.scraper_status if variables != None else ""
+    return {"scraper_status": scraper_status}

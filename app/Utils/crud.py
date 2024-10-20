@@ -69,14 +69,12 @@ async def get_audio_by_alert(db: AsyncSession, alert):
     query = query.filter(Audio.scanner_id == alert.scanner_id)
     query = query.limit(1)
     result = await db.execute(query)
-    print("result: ", result)
     return result.scalar_one_or_none()
 
 async def insert_audio(db: AsyncSession, audio, context, scanner_id):
     stmt = select(Audio).filter(Audio.file_name == audio)
     result = await db.execute(stmt)
     data = result.scalar_one_or_none()
-    print(data)
     if not data:
         new_audio = Audio(file_name=audio, context=context, scanner_id=scanner_id)
         db.add(new_audio)
@@ -107,7 +105,6 @@ async def check_alert_as_visited(db: AsyncSession, alert_id):
     result = result.scalar_one_or_none()
     updated_alert = result
     updated_alert.is_visited = 1
-    print("updated_variables", updated_alert.id, updated_alert.is_visited)
     await db.commit()
     await db.refresh(updated_alert)
         
@@ -127,7 +124,6 @@ async def insert_scanner(db: AsyncSession, stid, st_name, ctid, ct_name, scanner
         db.add(new_scanner)
         await db.commit()
         await db.refresh(new_scanner)
-        # print("new_scanner: ", new_scanner)
         return new_scanner
     return data
 
@@ -233,7 +229,7 @@ async def get_alerts_by_filter(db: AsyncSession, filter_model: AlertFilterModel,
     )
     result = await db.execute(query)
     alerts = result.scalars().all()
-    print("alertS: ", alerts)
+    
     if filter_model.headSearch:
         query = query.where(Alert.headline.ilike(f'%{filter_model.headSearch}%'))
     
@@ -244,10 +240,13 @@ async def get_alerts_by_filter(db: AsyncSession, filter_model: AlertFilterModel,
         decoded_sub_category = urllib.parse.unquote(filter_model.sub_category)
         query = query.filter(Alert.sub_category == decoded_sub_category)
     
+    if filter_model.alertIdSearch:
+        query = query.filter(Alert.id == filter_model.alertIdSearch)
+    
     if filter_model.category:
         query = query.filter(Alert.category == filter_model.category)
-    
 
+        
     if filter_model.scanner_id:
         query = query.filter(Alert.scanner_id == filter_model.scanner_id)
         
@@ -261,8 +260,8 @@ async def get_alerts_by_filter(db: AsyncSession, filter_model: AlertFilterModel,
         end_date = filter_model.selected_to + timedelta(days=1)  
         query = query.filter(Alert.dateTime < end_date)
     
-    # query = query.filter(Alert.scanner_id.in_(purchased_scanner_list))
-    # query = query.filter(Alert.sub_category.in_(selected_sub_categories))
+    query = query.filter(Alert.scanner_id.in_(purchased_scanner_list))
+    query = query.filter(Alert.sub_category.in_(selected_sub_categories))
 
     result = await db.execute(query)
     alerts = result.scalars().all()
@@ -272,8 +271,6 @@ async def get_alerts_by_filter(db: AsyncSession, filter_model: AlertFilterModel,
     start = (filter_model.page - 1) * filter_model.limit
     alerts = alerts[start: start + filter_model.limit]
     
-    print('alerts: ', alerts);
-
     return alerts, total
 
 
@@ -288,7 +285,6 @@ async def get_all_alerts(db: AsyncSession):
 
 async def get_alerts_by_id(db: AsyncSession, filter_model: IdFilterModel):
     query = select(Alert)
-    print("filter_model.scanner_id: ", filter_model.scanner_id)
     query = query.filter(Alert.id == filter_model.alert_id)
     
     result = await db.execute(query)
@@ -302,7 +298,6 @@ async def insert_purchased_scanners(db: AsyncSession, user_id, scanner_id):
     
     if not result:
         new_purchased_scanner = PurchasedScanner(user_id=user_id, scanner_id=scanner_id)
-        print("new_purchased_scanner: ", new_purchased_scanner)
         db.add(new_purchased_scanner)
         await db.commit()
         await db.refresh(new_purchased_scanner)
@@ -355,13 +350,11 @@ async def set_variables(db: AsyncSession, prompt):
     if not result:
         new_variables = Variables(prompt=prompt)
         db.add(new_variables)
-        print("new_variables", new_variables)
         await db.commit()
         await db.refresh(new_variables)
     else:
         updated_variables = result[0]
         updated_variables.prompt = prompt
-        print("updated_variables", updated_variables)
         await db.commit()
         await db.refresh(updated_variables)
         
@@ -369,6 +362,21 @@ async def get_variables(db: AsyncSession):
     query = select(Variables)
     result = await db.execute(query)
     return result.scalar_one_or_none()
+
+async def update_scraper_status(db: AsyncSession, scraper_status):
+    query = select(Variables)
+    result = await db.execute(query)
+    result = result.scalars().all()
+    if not result:
+        new_variables = Variables(scraper_status=scraper_status)
+        db.add(new_variables)
+        await db.commit()
+        await db.refresh(new_variables)
+    else:
+        updated_variables = result[0]
+        updated_variables.scraper_status = scraper_status
+        await db.commit()
+        await db.refresh(updated_variables)
     
 
 async def get_all_subcategories(db: AsyncSession, filter_model):
@@ -389,7 +397,6 @@ async def get_selected_subcategories(db: AsyncSession):
 
 async def update_subcategories(db: AsyncSession, category_object):
     stmt = select(Category).filter(Category.sub_category == category_object.sub_category)
-    # print("category_object: ", category_object)
     result = await db.execute(stmt)
     result = result.scalar_one_or_none()
     result.is_selected = category_object.is_selected

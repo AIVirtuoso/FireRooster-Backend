@@ -7,6 +7,7 @@ class FilterModel(BaseModel):
     page: Optional[int] = 1
     headSearch: Optional[str] = ""
     decSearch: Optional[str] = ""
+    alertIdSearch: Optional[int] = None
     scanner_id: Optional[int] = None
     category: Optional[str] = None
     sub_category: Optional[str] = None
