@@ -220,7 +220,7 @@ async def get_alerts_by_filter(db: AsyncSession, filter_model: AlertFilterModel,
         select(func.distinct(AlertAlias.id))  
         .select_from(AlertAlias)  
         .join(AddressAlias, AddressAlias.alert_id == AlertAlias.id)  
-        .filter(AddressAlias.score >= 0.5)  
+        .filter(AddressAlias.score >= 0.3)  
     ).subquery()  
     query = (  
         select(Alert)  
