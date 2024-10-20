@@ -127,8 +127,9 @@ async def update_addresses_router(db: Session = Depends(get_db)):
 
 @router.post('/remove-duplicated-alerts')
 async def remove_duplicated_alerts(db: Session = Depends(get_db)):
-    message = await crud.remove_duplicated_alerts(db)
-    return {"message": message}
+    return
+    # message = await crud.remove_duplicated_alerts(db)
+    # return {"message": message}
 
 @router.post('/unlock-contact-info')
 async def unlock_contact_info_router(model: UnlockContactInfoModel, db: Session = Depends(get_db)):

@@ -6,7 +6,6 @@ from random import sample
 import logging as log
 import asyncio
 
-import librosa
 import requests
 from pydub import AudioSegment
 from app.Utils.remove_space import process_audio

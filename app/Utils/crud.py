@@ -15,9 +15,9 @@ from app.Models.AlertModel import IdFilterModel
 from app.Models.AlertModel import FilterModel as AlertFilterModel
 
 import urllib.parse
-import spacy
+# import spacy
 
-nlp = spacy.load("en_core_web_md")
+# nlp = spacy.load("en_core_web_md")
 
 async def get_user_by_email(db: AsyncSession, email: str):
     stmt = select(User).filter(User.email == email)
@@ -437,46 +437,46 @@ async def insert_csv(db:AsyncSession, csv_context_json, state, county):
         return data
 
 
-async def calculate_similarity(alert, unique_alerts, threshold=0.9):
-    alert_doc = nlp(alert.description)
-    for unique_alert in unique_alerts:
-        unique_doc = nlp(unique_alert.description)
-        if alert_doc.similarity(unique_doc) > threshold:
-            return False
-    return True
+# async def calculate_similarity(alert, unique_alerts, threshold=0.9):
+#     alert_doc = nlp(alert.description)
+#     for unique_alert in unique_alerts:
+#         unique_doc = nlp(unique_alert.description)
+#         if alert_doc.similarity(unique_doc) > threshold:
+#             return False
+#     return True
 
-async def remove_duplicated_alerts(db: AsyncSession):
-    query = select(Alert)
-    results = await db.execute(query)
-    alerts = results.scalars().all()
-    print("Got all data!")
+# async def remove_duplicated_alerts(db: AsyncSession):
+#     query = select(Alert)
+#     results = await db.execute(query)
+#     alerts = results.scalars().all()
+#     print("Got all data!")
 
-    unique_alerts = []
-    for alert in alerts:
-        alert_doc = nlp(alert.description)
-        last_10_unique_alerts = unique_alerts[-10:]
-        is_duplicate = any(alert_doc.similarity(nlp(unique_alert.description)) > 0.9 for unique_alert in last_10_unique_alerts)
-        if not is_duplicate:
-            unique_alerts.append(alert)
-    print("Filtered unique data!")
+#     unique_alerts = []
+#     for alert in alerts:
+#         alert_doc = nlp(alert.description)
+#         last_10_unique_alerts = unique_alerts[-10:]
+#         is_duplicate = any(alert_doc.similarity(nlp(unique_alert.description)) > 0.9 for unique_alert in last_10_unique_alerts)
+#         if not is_duplicate:
+#             unique_alerts.append(alert)
+#     print("Filtered unique data!")
     
-    await db.execute(delete(Alert))
-    print("Deleted current data!")
+#     await db.execute(delete(Alert))
+#     print("Deleted current data!")
 
-    for unique_alert in unique_alerts:
-        db.add(Alert(
-            category=unique_alert.category,
-            sub_category=unique_alert.sub_category,
-            headline=unique_alert.headline,
-            description=unique_alert.description,
-            address=unique_alert.address,
-            scanner_id=unique_alert.scanner_id,
-            dateTime=unique_alert.dateTime,
-            is_visited=unique_alert.is_visited
-        ))
-    print("Added new data!")
+#     for unique_alert in unique_alerts:
+#         db.add(Alert(
+#             category=unique_alert.category,
+#             sub_category=unique_alert.sub_category,
+#             headline=unique_alert.headline,
+#             description=unique_alert.description,
+#             address=unique_alert.address,
+#             scanner_id=unique_alert.scanner_id,
+#             dateTime=unique_alert.dateTime,
+#             is_visited=unique_alert.is_visited
+#         ))
+#     print("Added new data!")
 
-    await db.commit()
-    print("Committed!")
+#     await db.commit()
+#     print("Committed!")
 
-    return "success"
+#     return "success"

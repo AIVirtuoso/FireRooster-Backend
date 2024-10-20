@@ -143,8 +143,8 @@ async def toggle_scraper_router(model: ToggleScraperModel, user: Annotated[User,
     await crud.update_scraper_status(db, model.scraper_status)
     return {"status": True, "message": "Turned on successfully" if model.scraper_status else "Turned off successfully"}
 
-@router.post('/get-scraper-status')
-async def toggle_scraper_router(model: ToggleScraperModel, user: Annotated[User, Depends(get_current_user)], db: Session = Depends(get_db)):
+@router.get('/get-scraper-status')
+async def toggle_scraper_router(user: Annotated[User, Depends(get_current_user)], db: Session = Depends(get_db)):
     variables = await crud.get_variables(db)
     scraper_status = variables.scraper_status if variables != None else ""
     return {"scraper_status": scraper_status}
