@@ -140,7 +140,7 @@ async def delete_purchased_scanner(model: DeleteScannerModel, user: Annotated[Us
 
 @router.post('/set-scraper-status')
 async def toggle_scraper_router(model: ToggleScraperModel, user: Annotated[User, Depends(get_current_user)], db: Session = Depends(get_db)):
-    await crud.update_scraper_status(db, model.scraper_status)
+    await crud.update_scraper_status(db, 1 - model.scraper_status)
     return {"status": True, "message": "Turned on successfully" if model.scraper_status else "Turned off successfully"}
 
 @router.get('/get-scraper-status')
