@@ -76,14 +76,14 @@ async def keep_alive():
             except Exception as e:  
                 print(f"Error during keep-alive: {e}")  
 
-# @app.on_event("startup")  
-# async def startup_event():  
-#     asyncio.create_task(keep_alive())  # Start the keep-alive task  
-#     loop = asyncio.get_event_loop()  
-#     # Schedule the periodic task to run every 1800 seconds (30 minutes)  
-#     loop.create_task(periodic_task(3600)) 
-#     # from app.Utils.remove_space import process_audio
-#     # await process_audio("sample.mp3")
+@app.on_event("startup")  
+async def startup_event():  
+    asyncio.create_task(keep_alive())  # Start the keep-alive task  
+    loop = asyncio.get_event_loop()  
+    # Schedule the periodic task to run every 1800 seconds (30 minutes)  
+    loop.create_task(periodic_task(1800)) 
+    # from app.Utils.remove_space import process_audio
+    # await process_audio("sample.mp3")
 
 @app.get("/")
 async def health_checker():
